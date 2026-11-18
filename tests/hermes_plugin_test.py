@@ -157,7 +157,9 @@ class Workflow(unittest.TestCase):
         private.mkdir(parents=True, mode=0o700)
         cfg = private / "config.json"
         cfg.touch(mode=0o600)
-        cfg.write_text(json.dumps({"panel_url": setup["url"], "token": setup["token"]}))
+        cfg.write_text(json.dumps({"panel_url": setup["url"], "token": setup["token"],
+                                   "name": "Hermes Ops", "project": "Homelab"}))
+        self.enterContext(patch.object(h, 'session_cwd', return_value=''))
         if not UPSTREAM:
             storage = SimpleNamespace(plugin_data_dir=lambda name: private)
             self.enterContext(
@@ -167,7 +169,7 @@ class Workflow(unittest.TestCase):
         with patch.object(
             plugin,
             "install",
-            side_effect=lambda ctx, url, token: install(ctx, url, token, interval=0.15),
+            side_effect=lambda ctx, url, token, **labels: install(ctx, url, token, interval=0.15, **labels),
         ):
             plugin.register(h)
 
@@ -176,6 +178,7 @@ class Workflow(unittest.TestCase):
 
         call("on_session_open")
         agent = until(lambda: db({"op": "agent"}))
+        self.assertEqual(db({'op':'labels','agent':agent}), {'name':'Hermes Ops','project':'Homelab'})
         call("pre_llm_call", turn_id="human", user_message="NEVER-SEND")
         call(
             "pre_tool_call",
@@ -267,6 +270,7 @@ class Workflow(unittest.TestCase):
             "context-compacted",
         ):
             self.assertIn(signal, stored)
+        self.assertNotIn('tool_source', stored)
         self.assertNotIn("/private/path", stored)
         self.assertEqual(len(h.prompts), 2)
 

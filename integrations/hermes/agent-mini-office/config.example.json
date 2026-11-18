@@ -1,4 +1,6 @@
 {
   "panel_url": "https://office.example.com",
-  "token": "<paste the private office join key or trusted producer credential here>"
+  "token": "<paste the private office join key or trusted producer credential here>",
+  "name": "My Homelab",
+  "project": "My Project"
 }

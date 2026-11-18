@@ -20,6 +20,7 @@ for await (const line of createInterface({input:process.stdin})) {
   const {op,agent,id} = JSON.parse(line);
   const result = op==='agent' ? office.db.prepare('SELECT agent_id FROM machine_sessions LIMIT 1').get<{agent_id:string}>()?.agent_id
     : op==='task' ? createTask(office.db,office.orgId,agent,'Fixture task','Fixture brief',0).task?.id
+    : op==='labels' ? office.db.prepare('SELECT v.name,a.project FROM visit_labels v JOIN agents a ON a.id=v.agent_id WHERE a.id=?').get(agent)
     : op==='acks' ? ackRequests
     : op==='status' ? office.db.prepare('SELECT status FROM tasks WHERE id=?').get<{status:string}>(id)?.status
     : office.db.prepare('SELECT type,data FROM events').all();

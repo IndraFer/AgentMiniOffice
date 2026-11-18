@@ -5,11 +5,11 @@ A Hermes lifecycle plugin. Start with a private test office. No model key, trans
 ## Install in one trusted profile
 
 1. Extract the Hermes ZIP into `$HERMES_HOME/plugins/` (default `~/.hermes/plugins/`). The result must be `plugins/agent-mini-office/plugin.yaml`, alongside `__init__.py` and the JSON files. From source, copy this whole directory instead.
-2. Create `$HERMES_HOME/plugin-data/agent-mini-office/` with mode `0700`. Create `config.json` there with mode `0600`, owned by your OS account. Copy the two fields from `config.example.json`; insert the real credential in a private editor, not in chat or shell history. The URL must be an HTTPS origin (HTTP on loopback is accepted). No project or agent name is required. Without a readable valid private config the plugin is inert.
-3. Run `hermes plugins enable agent-mini-office` in that profile, then start a new session. Check Dashboard → Agents for the working folder basename, harness `hermes`. Missing workspace information displays `Workspace`. Only the folder label leaves the host; neither its full path nor Hermes session IDs do. Use a non-sensitive workspace name.
+2. Create `$HERMES_HOME/plugin-data/agent-mini-office/` with mode `0700`. Create `config.json` there with mode `0600`, owned by your OS account. Copy the two required fields from `config.example.json`; insert the real credential in a private editor, not in chat or shell history. The URL must be an HTTPS origin (HTTP on loopback is accepted). The optional `name` field sets a stable visit label; the optional `project` field sets the project label shown in the office. Set both for a folderless daemon, for example `"name": "Hermes Ops", "project": "Homelab"`. Without `name`, the visit uses the working folder basename or `Workspace`; without `project`, no project label is sent. Without a readable valid private config the plugin is inert.
+3. Run `hermes plugins enable agent-mini-office` in that profile, then start a new session. Check Dashboard → Agents for the configured labels and harness `hermes`. These labels are shared by sessions using this config; they are not inferred from chat titles and do not identify or route a visit. Choose labels suitable for office viewers. The plugin does not send the full working path or native session ID.
 4. A general join key needs Open admission for enrollment. A Trusted credential also works with admission Closed. Restart the host after changing config or `actions.json`. To stop reporting, disable the plugin and restart that host. This does not retire the office's producer credential.
 
-For editor validation, associate `config.schema.json` with the private `config.json`; do not add a project, token mode, or task switch to the file.
+For editor validation, associate `config.schema.json` with the private `config.json`; only `panel_url` and `token` are required.
 
 ## Activity mapping
 

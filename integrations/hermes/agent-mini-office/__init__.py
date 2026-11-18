@@ -68,9 +68,11 @@ def target(ctx, sid, surface):
 
 
 class Connector:
-    def __init__(self, ctx, origin, token, interval):
+    def __init__(self, ctx, origin, token, interval, name="", project=""):
         self.ctx, self.origin, self.token = ctx, origin, token
         self.interval = interval
+        self.name = name
+        self.project = project
         self.rules = mappings()
         self.closed = False
         self.lock = threading.RLock()
@@ -108,7 +110,7 @@ class Connector:
                 # the client surface as a hook argument until the first turn.
                 key = target(self.ctx, sid, surface or kw.get("platform"))
                 cwd = getattr(self.ctx, "session_cwd", lambda: "")() if surface else ""
-                folder = Path(cwd or "").name.strip()[:60]
+                folder = (self.name or Path(cwd or "").name).strip()[:60]
                 if visit is None:
 
                     def inject(prompt, **kwargs):
@@ -117,7 +119,7 @@ class Connector:
                         return self.ctx.inject_message(prompt, **kwargs)
 
                     visit = self.visits[sid] = Visit(
-                        Panel(self.origin, self.token, folder or "Workspace"),
+                        Panel(self.origin, self.token, folder or "Workspace", self.project),
                         key,
                         inject,
                         self.interval,
@@ -166,8 +168,8 @@ def bind(ctx, connector):
     return connector
 
 
-def install(ctx, origin, token, *, interval=15):
-    connector = Connector(ctx, origin, token, interval)
+def install(ctx, origin, token, *, interval=15, name="", project=""):
+    connector = Connector(ctx, origin, token, interval, name, project)
     return bind(ctx, connector)
 
 
@@ -175,8 +177,8 @@ def register(ctx):
     from plugins.plugin_storage import plugin_data_dir
 
     try:
-        origin, token = config(plugin_data_dir("agent-mini-office") / "config.json")
-        connector = install(ctx, origin, token)
+        origin, token, name, project = config(plugin_data_dir("agent-mini-office") / "config.json")
+        connector = install(ctx, origin, token, name=name, project=project)
     except FileNotFoundError:
         bind(ctx, None)
         return

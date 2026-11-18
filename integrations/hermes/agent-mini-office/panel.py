@@ -38,8 +38,13 @@ def config(path):
         ):
             raise ValueError("private config must belong to the user and be mode 0600")
         data = json.loads(file.read(16385))
-    if set(data) != {"panel_url", "token"} or not TOKEN.fullmatch(data["token"]):
+    if not {"panel_url", "token"} <= set(data) or set(data) - {"panel_url", "token", "name", "project"} or not TOKEN.fullmatch(data["token"]):
         raise ValueError("expected a panel origin and a join or producer token")
+    name = data.get("name", "")
+    project = data.get("project", "")
+    for label, value in (("name", name), ("project", project)):
+        if not isinstance(value, str) or len(value) > 60 or any(ord(ch) < 32 or ord(ch) == 127 for ch in value):
+            raise ValueError(f"{label} must be printable text up to 60 characters")
     origin = urlsplit(data["panel_url"])
     if (
         not origin.hostname
@@ -55,7 +60,7 @@ def config(path):
         )
     ):
         raise ValueError("expected HTTPS origin or HTTP on loopback")
-    return data["panel_url"].rstrip("/"), data["token"]
+    return data["panel_url"].rstrip("/"), data["token"], name.strip(), project.strip()
 
 
 def mappings():
@@ -93,8 +98,9 @@ class Offline(Exception):
 
 
 class Panel:
-    def __init__(self, origin, token, folder):
+    def __init__(self, origin, token, folder, project=""):
         self.origin, self.token, self.folder = origin, token, folder
+        self.project = project
         self.producer = (
             token
             if token.startswith("amo_producer_")
@@ -108,9 +114,10 @@ class Panel:
         self.grant = False
         self.renew = 0
         self.reported_folder = None
+        self.reported_project = None
         self.http = build_opener(RefuseRedirect())
 
-    def request(self, path, body=None, *, bearer=None):
+    def request(self, path, body=None, *, bearer=None, method=None):
         raw = None if body is None else json.dumps(body, separators=(",", ":")).encode()
         req = Request(
             self.origin + "/api/v1" + path,
@@ -119,6 +126,7 @@ class Panel:
                 "Authorization": "Bearer " + (bearer or self.writer),
                 "Content-Type": "application/json",
             },
+            method=method,
         )
         try:
             with self.http.open(req, timeout=4) as response:
@@ -140,16 +148,19 @@ class Panel:
             )
             self.enrolled = True
         folder = self.folder
+        session_body = {
+            "visit": True,
+            "harness": "hermes",
+            "name": folder,
+            "external_session_id": self.session,
+            "writer_token": self.writer,
+            "lifecycle": "session",
+        }
+        if self.project:
+            session_body["project"] = self.project
         result = self.request(
             "/machine/sessions",
-            {
-                "visit": True,
-                "harness": "hermes",
-                "name": folder,
-                "external_session_id": self.session,
-                "writer_token": self.writer,
-                "lifecycle": "session",
-            },
+            session_body,
             bearer=self.producer,
         )
         if not ID.fullmatch(result["agent_id"]) or self.agent not in (
@@ -164,6 +175,17 @@ class Panel:
             self.token.startswith("amo_producer_") and result.get("inbox") is True
         )
         self.renew = expires(result["expires_at"]) - 60
+        if self.project and self.reported_project != self.project:
+            try:
+                self.request(
+                    f"/machine/sessions/{self.agent}/project",
+                    {"project": self.project},
+                    method="PATCH",
+                )
+            except Denied as error:
+                if error.code not in (404, 405):
+                    raise
+            self.reported_project = self.project
 
     def events(self, batch):
         for i, event in enumerate(batch, 1):
