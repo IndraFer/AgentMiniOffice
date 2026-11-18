@@ -209,7 +209,7 @@ The Agents registration form remains separate and creates a dedicated reporting 
   heartbeat timing, event reliability, optional leased inbox execution, and troubleshooting. A sample
   sequence of 1 is explicitly a first-connection example, not a repeatable health check.
 - Waiting for Human remains agent-reported telemetry, not a dashboard chat or approve/reject channel.
-  Responses happen in the original harness. Beyond the Pi sample, other connector packages, member management, configurable
+  Responses happen in the original harness. The guide also provides the schema-based Hermes plugin. Other connector packages, member management, configurable
   worker capacity and multi-office membership are not presented as available features.
 - Setup/reference chapters use native keyboard-operable disclosures. Credentials and long text wrap;
   tables keep their own horizontal scroll rather than widening the page.

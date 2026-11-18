@@ -1746,11 +1746,11 @@ function integrationsPage() {
         h(
           "p",
           {},
-          "Install the Pi connector, give another engine the public guide, or build a REST sender. Read the examples here before downloading them.",
+          "Install the Pi or Hermes connector, give another engine the public guide, or build a REST sender. Read the examples here before downloading them.",
         ),
       ),
       h('nav', {class:'integration-doc-links', 'aria-label':'Integration paths'},
-        ...[['','Public Integrations Guide'],['#pi','Install for Pi'],['#handoff','Instructions for another engine'],['#headers','Build a connector']]
+        ...[['','Public Integrations Guide'],['#pi','Install for Pi'],['#hermes','Install for Hermes'],['#handoff','Instructions for another engine'],['#headers','Build a connector']]
           .map(([anchor,label]) => h('a',{class:'btn btn-quiet',href:`/guides/integrations.html${anchor}`},label))),
     ),
     h("section", { class: "card guide-public" },

@@ -7,6 +7,7 @@ project uses semantic versioning once it ships; until then everything is `0.x`.
 
 ### Added
 
+- Added a downloadable Hermes Agent plugin with an editable tool-action schema, observed lifecycle telemetry and Trusted Inbox delivery on supported local gateway sessions.
 - Owners can switch on Public View to share a short read-only office URL, or switch it off to disconnect anonymous viewers without restarting the collector. New offices are private.
 - Pi can now pick up a task assigned to its idle visit when the collector grants a Trusted token Inbox access. Visit tasks have 15 minutes for pickup. A claimed task has a separate renewable execution lease; its task-specific completion or failure receipt updates the dashboard without uploading the assistant’s reply. General and ungranted connections remain telemetry-only.
 - Shared, selectable station and pose variants for 13 actions. REST clients and Pi tool maps can select an official `variant` or send the action alone for automatic placement. Explicit choices prefer their named station, then try catalogue fallbacks for the same action. New poses include desk mouse use, arranging sheets, cabinet reading/sorting and whiteboard inspection. A fully occupied office preserves the action label with a prop-free waiting gesture. The Pi ZIP includes an optional, varied example map separate from active mappings. The integration guide lists all primary actions and scene alternatives; the dashboard documentation card presents four consistent navigation links.

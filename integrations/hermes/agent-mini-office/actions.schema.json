@@ -1,0 +1,321 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "$schema",
+    "tools"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "const": "actions.schema.json"
+    },
+    "tools": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-zA-Z0-9_.:-]{1,120}$"
+      },
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "write"
+              },
+              "variant": {
+                "enum": [
+                  "laptop_typing",
+                  "board_writing",
+                  "print_tablet",
+                  "library_tablet"
+                ]
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "web_request"
+              },
+              "variant": {
+                "enum": [
+                  "laptop_typing"
+                ]
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "search_web"
+              },
+              "variant": {
+                "enum": [
+                  "shelf_reading",
+                  "cabinet_paper",
+                  "laptop_typing"
+                ]
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "analyze_visual"
+              },
+              "variant": {
+                "enum": [
+                  "shelf_reading",
+                  "cabinet_paper",
+                  "board_inspection",
+                  "desk_mouse"
+                ]
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "read"
+              },
+              "variant": {
+                "enum": [
+                  "shelf_reading",
+                  "cabinet_paper",
+                  "cabinet_reading",
+                  "cabinet_sorting",
+                  "desk_mouse",
+                  "desk_documents"
+                ]
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "search_content"
+              },
+              "variant": {
+                "enum": [
+                  "shelf_reading",
+                  "cabinet_paper",
+                  "cabinet_reading",
+                  "cabinet_sorting",
+                  "desk_mouse",
+                  "desk_documents"
+                ]
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "compact_context"
+              },
+              "variant": {
+                "enum": [
+                  "cabinet_sorting"
+                ]
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "lookup_file"
+              },
+              "variant": {
+                "enum": [
+                  "cabinet_paper",
+                  "shelf_reading",
+                  "cabinet_reading",
+                  "cabinet_sorting",
+                  "desk_mouse",
+                  "desk_documents"
+                ]
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "use_tools"
+              },
+              "variant": {
+                "enum": [
+                  "bench_tools",
+                  "cart_tools",
+                  "cart_visit",
+                  "laptop_typing"
+                ]
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "plan"
+              },
+              "variant": {
+                "enum": [
+                  "board_planning",
+                  "desk_documents"
+                ]
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "print"
+              },
+              "variant": {
+                "enum": [
+                  "printer_output",
+                  "file_staging"
+                ]
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "call"
+              },
+              "variant": {
+                "enum": [
+                  "phone_listening"
+                ]
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "meet"
+              },
+              "variant": {
+                "enum": [
+                  "table_listening"
+                ]
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "final_response"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "final_print"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "final_call"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "other"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  }
+}

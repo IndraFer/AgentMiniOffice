@@ -116,6 +116,8 @@ The package separates **`actions.json`** (your active tool mapping), **`actions.
 
 **Assign a task to Pi:** Use a **Trusted** connector issued with **Inbox** access, then assign a task to that session in the dashboard. This grant is the only task switch. Join-key connections, Trusted tokens without Inbox, and collectors that do not report a grant stay telemetry-only. The task stays in **Todo** until the idle session claims it (within 15 minutes of creation). **Doing** means claimed; **Done** distinguishes acknowledged from failed. Pi still asks for its usual approvals. Acknowledgement means Pi reported completion for that task, not that the panel independently verified its work.
 
+**Hermes Agent:** Download the [Hermes plugin ZIP](public/downloads/agent-mini-office-hermes.zip) or follow the [installation guide](integrations/hermes/agent-mini-office/README.md). It maps observed hooks through an editable action schema. Assigned-task pickup needs both Trusted + Inbox and Hermes permission for a session-bound local gateway. A join key is telemetry-only.
+
 **Another harness or a small script:** Open [the guide on your local panel](http://127.0.0.1:3000/guides/integrations.html) for the enrollment sequence, headers, copyable REST examples and retry handling. Send heartbeats every 10–15 seconds with increasing sequence numbers, and use `note`, `tool.start` or `tool.call` for observed actions. Check `rejected[]` even on HTTP 200. The same contract works for an engine with no tool hooks: send only observations it can actually make.
 
 ## Privacy and operations

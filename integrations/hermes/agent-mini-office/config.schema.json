@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgentMiniOffice private Hermes configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["panel_url", "token"],
+  "properties": {
+    "panel_url": {"type": "string", "format": "uri", "description": "HTTPS origin, or HTTP on loopback for local testing. No credentials, path, query or fragment."},
+    "token": {"type": "string", "pattern": "^amo_(join|producer)_[A-Za-z0-9_-]{43}$", "writeOnly": true}
+  }
+}

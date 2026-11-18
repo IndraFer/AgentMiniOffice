@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgentMiniOffice v1 event data.action",
+  "description": "Validates the action string, not the event. An optional sibling data.variant selects an ID from that action's variants. Try the selected ID, then its ordered fallback IDs, then the action's remaining working and overflow entries in order. If all compatible objects are busy, wait without using a prop. Without a selection, when governs automatic station assignment. Null room preserves the reported room for final overlays.",
+  "type": "string", "minLength": 1, "maxLength": 48, "pattern": "^[a-z][a-z0-9_]*$",
+  "examples": ["lookup_file", "compact_context", "final_response"],
+  "x-actions": {
+    "write": {"room":"desk","pose":"typing","label":"Desk Work","variants":[
+      {"id":"laptop_typing","when":"working","room":"desk","object":"laptop","poses":["typing","mouse","scan","lean"]},
+      {"id":"board_writing","when":"work_trip","room":"whiteboard","object":"whiteboard","poses":["writing","glance"],"fallback":["laptop_typing"]},
+      {"id":"print_tablet","when":"overflow","room":"print-room","object":"tablet","poses":["portable","nod"]},
+      {"id":"library_tablet","when":"overflow","room":"library","object":"tablet","poses":["portable","glance"]}
+    ]},
+    "web_request": {"room":"desk","pose":"typing","label":"Web Request","variants":[
+      {"id":"laptop_typing","when":"working","room":"desk","object":"laptop","poses":["typing","scan","glance"]}
+    ]},
+    "search_web": {"room":"library","pose":"reading","label":"Searching the Web","variants":[
+      {"id":"shelf_reading","when":"working","room":"library","object":"bookshelf","poses":["reading","scan","lean"],"fallback":["cabinet_paper"]},
+      {"id":"cabinet_paper","when":"working","room":"library","object":"cabinet","poses":["output","glance","nod"]},
+      {"id":"laptop_typing","when":"overflow","room":"desk","object":"laptop","poses":["typing","scan","mouse"]}
+    ]},
+    "analyze_visual": {"room":"library","pose":"reading","label":"Analyzing an Image","variants":[
+      {"id":"shelf_reading","when":"working","room":"library","object":"bookshelf","poses":["reading","lean","scan"]},
+      {"id":"cabinet_paper","when":"working","room":"library","object":"cabinet","poses":["output","tilt","glance"]},
+      {"id":"board_inspection","when":"overflow","room":"whiteboard","object":"whiteboard","poses":["inspecting","tilt"]},
+      {"id":"desk_mouse","when":"overflow","room":"desk","object":"laptop","poses":["mouse","scan"]}
+    ]},
+    "read": {"room":"library","pose":"reading","label":"Reading","variants":[
+      {"id":"shelf_reading","when":"working","room":"library","object":"bookshelf","poses":["reading","glance","lean"],"fallback":["cabinet_paper"]},
+      {"id":"cabinet_paper","when":"working","room":"library","object":"cabinet","poses":["output","scan","nod"]},
+      {"id":"cabinet_reading","when":"working","room":"library","object":"cabinet","poses":["reading","glance"]},
+      {"id":"cabinet_sorting","when":"working","room":"library","object":"cabinet","poses":["sorting","lean"]},
+      {"id":"desk_mouse","when":"overflow","room":"desk","object":"laptop","poses":["mouse","scan"]},
+      {"id":"desk_documents","when":"overflow","room":"desk","object":"documents","poses":["arranging","nod"]}
+    ]},
+    "search_content": {"room":"library","pose":"reading","label":"Searching Content","variants":[
+      {"id":"shelf_reading","when":"working","room":"library","object":"bookshelf","poses":["reading","scan","lean"]},
+      {"id":"cabinet_paper","when":"working","room":"library","object":"cabinet","poses":["output","glance","lean"]},
+      {"id":"cabinet_reading","when":"working","room":"library","object":"cabinet","poses":["reading","scan"]},
+      {"id":"cabinet_sorting","when":"working","room":"library","object":"cabinet","poses":["sorting","glance"]},
+      {"id":"desk_mouse","when":"overflow","room":"desk","object":"laptop","poses":["mouse","scan"]},
+      {"id":"desk_documents","when":"overflow","room":"desk","object":"documents","poses":["arranging","lean"]}
+    ]},
+    "compact_context": {"room":"library","pose":"sorting","label":"Compacting Context","variants":[
+      {"id":"cabinet_sorting","when":"working","room":"library","object":"cabinet","poses":["sorting","glance"]}
+    ]},
+    "lookup_file": {"room":"library","pose":"reading","label":"Looking Up Files","variants":[
+      {"id":"cabinet_paper","when":"working","room":"library","object":"cabinet","poses":["output","scan","glance"],"fallback":["shelf_reading"]},
+      {"id":"shelf_reading","when":"working","room":"library","object":"bookshelf","poses":["reading","lean","nod"]},
+      {"id":"cabinet_reading","when":"working","room":"library","object":"cabinet","poses":["reading","glance"]},
+      {"id":"cabinet_sorting","when":"working","room":"library","object":"cabinet","poses":["sorting","nod"]},
+      {"id":"desk_mouse","when":"overflow","room":"desk","object":"laptop","poses":["mouse","scan"]},
+      {"id":"desk_documents","when":"overflow","room":"desk","object":"documents","poses":["arranging","glance"]}
+    ]},
+    "use_tools": {"room":"workshop","pose":"tools","label":"Using Tools","variants":[
+      {"id":"bench_tools","when":"working","room":"workshop","object":"bench","poses":["tools","reach","adjust"],"fallback":["cart_tools"]},
+      {"id":"cart_tools","when":"working","room":"workshop","object":"tool-cart","poses":["tools","adjust","lean"]},
+      {"id":"cart_visit","when":"work_trip","room":"workshop","object":"tool-cart","poses":["tools","reach","adjust"]},
+      {"id":"laptop_typing","when":"overflow","room":"desk","object":"laptop","poses":["typing","mouse","scan"]}
+    ]},
+    "plan": {"room":"whiteboard","pose":"planning","label":"Planning","variants":[
+      {"id":"board_planning","when":"working","room":"whiteboard","object":"whiteboard","poses":["planning","glance","lean"]},
+      {"id":"desk_documents","when":"overflow","room":"desk","object":"documents","poses":["arranging","glance","nod"]}
+    ]},
+    "print": {"room":"print-room","pose":"output","label":"Preparing Output","variants":[
+      {"id":"printer_output","when":"working","room":"print-room","object":"printer","poses":["output","nod","glance"],"fallback":["file_staging"]},
+      {"id":"file_staging","when":"working","room":"print-room","object":"cabinet","poses":["output","glance","lean"]}
+    ]},
+    "call": {"room":"phone-booth","pose":"communication","label":"Communication","variants":[
+      {"id":"phone_listening","when":"working","room":"phone-booth","object":"phone","poses":["communication","tilt","nod"]}
+    ]},
+    "meet": {"room":"meeting","pose":"meeting","label":"Coordination","variants":[
+      {"id":"table_listening","when":"working","room":"meeting","object":"meeting-table","poses":["meeting","nod","tilt"]}
+    ]},
+    "final_response": {"room":null,"pose":"none","label":"Final Response"},
+    "final_print": {"room":null,"pose":"none","label":"Final Response"},
+    "final_call": {"room":null,"pose":"none","label":"Final Response"},
+    "other": {"room":"lobby","pose":"other","label":"Other Activity"}
+  }
+}

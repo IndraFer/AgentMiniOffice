@@ -18,6 +18,7 @@ data/
 
 # Dependencies and build output
 .ruff_cache
+__pycache__/
 node_modules/
 dist/
 build/
