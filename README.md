@@ -58,6 +58,8 @@ curl -fsS http://127.0.0.1:3000/health
 
 Open the [first-run dashboard](http://127.0.0.1:3000/dashboard). Use `docker compose logs -f office` for diagnostics. If port 3000 is taken, set `OFFICE_HOST_PORT=3100` before starting Compose and open port 3100 instead. Use a TLS reverse proxy for remote access.
 
+To configure the container, set application variables from [.env.example](.env.example) in the project’s `.env`, an explicit `docker compose --env-file <file>`, or the shell. Compose forwards the listed `MINIOFFICE_*` settings; shell values override file values. Paths refer to the container filesystem. Compose fixes `MINIOFFICE_HOST=0.0.0.0` **inside** the container so the published port can reach it. `MINIOFFICE_PORT` controls the internal port and healthcheck; `OFFICE_HOST_PORT` controls the loopback port on the host. Without a file or overrides, both ports default to 3000.
+
 **No mount does not mean no storage.** SQLite and its join-key secret live in `/app/data` inside the container. `docker compose stop` followed by `docker compose start` keeps that data. `docker compose down` or any update that **recreates** the container discards its accounts, office, tasks and activity. For an installation you need to keep, configure a persistent volume at `/app/data` **before first setup**, and back it up as described in [Security](SECURITY.md#credentials).
 
 Prefer Docker without Compose? Use the same image and storage behavior:

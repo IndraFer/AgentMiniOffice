@@ -1,10 +1,30 @@
 services:
   office:
     build: .
+    # Pass application settings from the shell or Compose's .env, not unrelated secrets.
+    environment:
+      MINIOFFICE_HOST: 0.0.0.0
+      MINIOFFICE_PORT: "${MINIOFFICE_PORT:-3000}"
+      MINIOFFICE_REQUEST_LOG:
+      MINIOFFICE_DATA_DIR:
+      MINIOFFICE_DB_FILE:
+      MINIOFFICE_SCHEMA:
+      MINIOFFICE_ONLINE_MS:
+      MINIOFFICE_STALE_MS:
+      MINIOFFICE_RETENTION_MINUTES:
+      MINIOFFICE_DEDICATED_RETENTION_MINUTES:
+      MINIOFFICE_FLUSH_MS:
+      MINIOFFICE_ROOM_HYSTERESIS_MS:
+      MINIOFFICE_LEASE_SECONDS:
+      MINIOFFICE_LEASE_SWEEP_MS:
+      MINIOFFICE_SESSION_TTL_DAYS:
+      MINIOFFICE_SECURE_COOKIES:
+      MINIOFFICE_ALLOW_REGISTRATION:
+      MINIOFFICE_PUBLIC_SLUGS:
     ports:
-      - "127.0.0.1:${OFFICE_HOST_PORT:-3000}:3000"
+      - "127.0.0.1:${OFFICE_HOST_PORT:-3000}:${MINIOFFICE_PORT:-3000}"
     healthcheck:
-      test: ["CMD", "bun", "-e", "if (!(await (await fetch('http://127.0.0.1:3000/health')).json()).ok) process.exit(1)"]
+      test: ["CMD", "bun", "-e", "if (!(await (await fetch('http://127.0.0.1:' + process.env.MINIOFFICE_PORT + '/health')).json()).ok) process.exit(1)"]
       interval: 10s
       timeout: 3s
       retries: 3
