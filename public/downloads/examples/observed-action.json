@@ -1,0 +1,8 @@
+{
+  "events": [{
+    "event_id": "019e0000-0001-7000-8000-000000000001",
+    "seq": 2,
+    "type": "note",
+    "data": { "action": "lookup_file" }
+  }]
+}

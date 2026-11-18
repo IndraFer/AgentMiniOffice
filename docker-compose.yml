@@ -1,0 +1,12 @@
+services:
+  office:
+    build: .
+    ports:
+      - "127.0.0.1:${OFFICE_HOST_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "bun", "-e", "if (!(await (await fetch('http://127.0.0.1:3000/health')).json()).ok) process.exit(1)"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    # No volumes: the SQLite database belongs to this container's writable layer.

@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgentMiniOffice public display fields (field schemas, not an event envelope)",
+  "$defs": {
+    "options": {"description":"Optional passive display IDs on human.waiting only; never option text or a selected answer.","type":"array","minItems":1,"maxItems":4,"uniqueItems":true,"items":{"enum":["yes","no","select","input"]}},
+    "avatar_label": {"description":"Public label chosen by the sender for a linked child run.started. Never use prompts, paths or private names.","type":"string","maxLength":40,"pattern":"^[A-Za-z0-9][A-Za-z0-9 _-]{0,39}$"}
+  }
+}

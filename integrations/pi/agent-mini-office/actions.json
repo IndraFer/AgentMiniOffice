@@ -1,0 +1,23 @@
+{
+  "$schema": "./actions.schema.json",
+  "version": 1,
+  "tools": {
+    "builtin": {
+      "read": "read",
+      "grep": "search_content",
+      "find": "lookup_file",
+      "ls": "lookup_file",
+      "bash": "use_tools",
+      "powershell": "use_tools",
+      "edit": "write",
+      "write": "write"
+    },
+    "extension": {
+      "ffgrep": "search_content",
+      "fffind": "lookup_file",
+      "update_plan": "plan",
+      "document_screenshot": "print",
+      "web_search": { "action": "search_web", "variant": "laptop_typing" }
+    }
+  }
+}

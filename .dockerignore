@@ -1,0 +1,11 @@
+# Only files needed by the collector may enter the build context.
+**
+!Dockerfile
+!package.json
+!bun.lock
+!src/
+!src/**
+!public/
+!public/**
+!docs/
+!docs/SCHEMA.sql

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>AgentMiniOffice</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <!-- Pinned, never @latest: three ships breaking changes on every minor. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <!-- Office view shell. Filled by app.js. -->
+    <div id="officeRoot" class="app" hidden>
+      <header class="appbar">
+        <div class="appbar-inner">
+          <a class="brand" href="/">
+            <span class="brand-mark" data-brand-mark aria-hidden="true"></span>
+            AgentMiniOffice
+            <small id="officeSlug">/</small>
+          </a>
+
+          <div class="appbar-end">
+            <span id="officeNav"></span>
+            <span class="badge hide-sm" id="officeMeta">0 agents</span>
+            <span class="who" id="statusLine" data-state="connecting" role="status">Connecting</span>
+            <button class="btn btn-ghost btn-sm" type="button" data-theme-toggle></button>
+          </div>
+        </div>
+      </header>
+
+      <main class="page">
+        <div class="page-head office-head">
+          <div class="office-heading">
+            <h1 id="officeName">Office</h1>
+            <p>Your team at work. Live activity, real tasks, one shared space.</p>
+          </div>
+          <dl class="stats" id="officeStats" aria-label="Office counters"></dl>
+          <fieldset class="segmented">
+            <legend class="sr-only">Office visual</legend>
+            <button class="seg-btn" type="button" data-view="2d">Board 2D</button>
+            <button class="seg-btn" type="button" data-view="3d">Office 3D</button>
+          </fieldset>
+        </div>
+
+        <div class="office-layout">
+          <div class="office-main">
+            <section class="rooms" id="rooms" aria-label="Rooms"></section>
+            <section id="stageView" class="stage" aria-label="Interactive office floor plan" hidden></section>
+            <section class="project-feed" aria-labelledby="projectHeading">
+              <div class="row spread">
+                <h2 id="projectHeading">Project Activity</h2>
+                <p class="tiny muted">Open-task priority, then latest signal · current snapshot</p>
+              </div>
+              <ul id="projectActivity" class="project-list"></ul>
+            </section>
+          </div>
+          <aside class="panel" id="detail" aria-label="Agent detail" aria-live="polite"></aside>
+        </div>
+
+        <footer class="page-foot">
+          <span>AgentMiniOffice · read-only view of live telemetry</span>
+          <span>REST Contract: docs/CONTRACT.md</span>
+        </footer>
+      </main>
+    </div>
+
+    <!-- Dashboard, auth screens, and first run setup are rendered here. -->
+    <div id="dashboardRoot" hidden></div>
+
+    <!-- Toast stack. Screen readers announce additions. -->
+    <div id="toasts" class="toasts" role="status" aria-live="polite" aria-atomic="false"></div>
+
+    <div id="boot" class="auth" hidden></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "$schema": "./actions.schema.json",
+  "version": 1,
+  "tools": {
+    "builtin": {
+      "read": { "action": "read", "variant": "cabinet_reading" },
+      "grep": { "action": "search_content", "variant": "desk_mouse" },
+      "find": { "action": "lookup_file", "variant": "cabinet_sorting" },
+      "write": "write"
+    },
+    "extension": {
+      "update_plan": { "action": "plan", "variant": "desk_documents" },
+      "web_search": { "action": "search_web", "variant": "laptop_typing" }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"AgentMiniOffice Pi tool map v1",
+  "description":"Local Pi tool-to-action mapping, read once per load, never uploaded. In the folder package actions.json is the complete map. In the single-file connector the optional root map overrides its defaults. Limit 64 KiB.",
+  "examples":[{"version":1,"tools":{"extension":{"catalog_lookup":"lookup_file"}}}],
+  "type":"object", "required":["version","tools"], "additionalProperties":false,
+  "properties":{
+    "$schema":{"type":"string"}, "version":{"const":1},
+    "tools":{
+      "type":"object", "propertyNames":{"enum":["builtin","builtin-extension","extension","sdk","unknown"]},
+      "additionalProperties":{
+        "type":"object", "propertyNames":{"pattern":"^[A-Za-z0-9_.:-]{1,96}$"},
+        "additionalProperties":{"oneOf":[
+          {"$ref":"action-v1.json"},
+          {"type":"object","required":["action","variant"],"additionalProperties":false,
+           "description":"The connector verifies variant membership against the adjacent action-v1.json catalogue.",
+           "properties":{"action":{"$ref":"action-v1.json"},"variant":{"type":"string","pattern":"^[a-z][a-z0-9_]{0,47}$"}}}
+        ]}
+      }
+    }
+  }
+}
