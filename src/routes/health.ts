@@ -5,13 +5,11 @@ import { readVersion } from "../lib/version";
 export interface HealthContext {
   db: Db;
   allowRegistration?: boolean;
-  publicSlugs?: string[];
 }
 
 export function healthRoutes({
   db,
   allowRegistration = false,
-  publicSlugs = [],
 }: HealthContext): Hono {
   const app = new Hono();
 
@@ -40,7 +38,7 @@ export function healthRoutes({
     return c.json({
       version: readVersion(),
       allow_registration: allowRegistration,
-      public_slugs: publicSlugs,
+      public_slugs: db.prepare('SELECT slug FROM organizations JOIN public_offices ON org_id=id WHERE archived_at IS NULL ORDER BY slug').all<{slug:string}>().map(row => row.slug),
       // True only while the instance has no account at all. The dashboard turns this into a
       // first run form, and POST /setup closes for good once the first admin exists.
       needs_setup: Number(members?.n ?? 0) === 0,

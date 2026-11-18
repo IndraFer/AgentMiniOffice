@@ -28,7 +28,6 @@ export interface AppContext {
   sessionTtlMs?: number;
   secureCookies?: boolean;
   allowRegistration?: boolean;
-  publicSlugs?: string[];
   demo?: DemoDriver;
   requestLog?: (line: string) => void;
 }
@@ -73,12 +72,12 @@ export function createApp(ctx: AppContext): Hono {
   );
   app.route("/api/v1", machineRoutes(ctx.db, live));
   app.route("/api/v1", officesRoutes({ db: ctx.db, demo: ctx.demo, store:ctx.store, live }));
-  app.route("/api/v1", readRoutes({ db: ctx.db, store: ctx.store, publicSlugs: ctx.publicSlugs }));
+  app.route("/api/v1", readRoutes({ db: ctx.db, store: ctx.store }));
   app.route("/api/v1", ingestRoutes({ ...ctx, live }));
   app.route("/api/v1", inboxRoutes({ db: ctx.db, leaseSeconds: ctx.leaseSeconds, live }));
   app.route(
     "/api/v1",
-    streamRoutes({ db: ctx.db, store: ctx.store, live, publicSlugs: ctx.publicSlugs }),
+    streamRoutes({ db: ctx.db, store: ctx.store, live }),
   );
 
   // Registered last so it only catches what the API did not claim.

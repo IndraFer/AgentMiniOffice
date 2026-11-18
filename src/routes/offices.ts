@@ -65,8 +65,8 @@ export function officesRoutes({ db, demo, store, live }: OfficesContext): Hono {
     if (!session) return fail(c, 401, "unauthorized", "sign in first");
 
     const office = db
-      .prepare("SELECT id, name, slug FROM organizations WHERE id = ?")
-      .get<OfficeRow>(session.orgId);
+      .prepare("SELECT id, name, slug, EXISTS(SELECT 1 FROM public_offices WHERE org_id=organizations.id) AS public_view FROM organizations WHERE id = ?")
+      .get<OfficeRow & {public_view:number}>(session.orgId);
     if (!office) return c.json({ offices: [] });
 
     const agents = db
@@ -98,6 +98,7 @@ export function officesRoutes({ db, demo, store, live }: OfficesContext): Hono {
           slug: office.slug,
           name: office.name,
           role: session.role,
+          public_view: Boolean(office.public_view),
           inbox_limit: MAX_PENDING_PER_AGENT,
           demo_running: demo?.isRunning(office.id) ?? false,
           agents: agents.map((agent) => ({
@@ -140,6 +141,21 @@ export function officesRoutes({ db, demo, store, live }: OfficesContext): Hono {
     if (!name) return fail(c, 400, "validation_failed", officeNameError);
     db.prepare("UPDATE organizations SET name = ? WHERE id = ?").run(name, guard.office.id);
     return c.json({ name, slug: guard.office.slug });
+  });
+
+  app.put('/offices/:slug/public-view', async (c) => {
+    const guard = requireOffice(c, db, c.req.param('slug'), true);
+    if ('response' in guard) return guard.response;
+    if (guard.session.role !== 'owner') return fail(c, 403, 'forbidden', 'only the Owner can change Public View');
+    const body: unknown = await c.req.json().catch(() => null);
+    if (!isPlainObject(body) || typeof body.enabled !== 'boolean') return fail(c, 400, 'validation_failed', 'enabled must be a boolean');
+    const id = guard.office.id;
+    if (body.enabled) db.prepare('INSERT OR IGNORE INTO public_offices(org_id) VALUES(?)').run(id);
+    else {
+      db.prepare('DELETE FROM public_offices WHERE org_id=?').run(id);
+      live.bus.publish({event:'public-view-off',data:{org_id:id}});
+    }
+    return c.json({public_view:body.enabled});
   });
 
   app.post("/offices/:slug/share", async (c) => {

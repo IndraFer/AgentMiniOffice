@@ -82,7 +82,7 @@ installations or generations; a name, project or native session ID is not a secr
    installation use the Owner-issued producer instead. If one is lost, revoke and provision afresh.
 2. `POST /api/v1/machine/sessions` with producer bearer and `harness` (1–40), `external_session_id`
    (1–128), `name` (1–60), private `writer_token` (`amo_writer_<random>`), optional `project` (1–60)
-   and `lifecycle` (`session` by default, or `daemon`). A new session returns 201 with `agent_id`,
+   and `lifecycle` (`session` by default, or `daemon`). These are session-open payload fields, not installer settings. For a workspace-based plugin, set `harness` from the engine and `name` from the working folder’s basename. Do not require a static `project` setting: omit this public display label or derive it from session metadata suitable for office viewers. The credential selects the office. A new session returns 201 with `agent_id`,
    `generation`, `expires_at`, `last_seq` and a boolean `inbox`. Only `inbox: true` is a task grant; treat a missing field from older collectors as false. Retrying with the same live writer returns its metadata
    (200), not a second avatar. A different writer for that identity gets 409. Names may be disambiguated
    for display. Safety ceilings are 256 non-revoked producers per office and 128 session identities per
@@ -245,7 +245,9 @@ cannot fake work that an agent never did.
 `POST /setup` answers `403 forbidden` as soon as any member exists. It is a bootstrap, not a backdoor,
 and it never creates a second administrator.
 
-Read access to an office is the union of three things: the slug is listed as public, the caller holds a
+Only the office Owner may `PUT /offices/:slug/public-view` with `{"enabled":true}` or `{"enabled":false}`. The response includes the stored boolean `public_view`, also present in the member's office listing. Off ends anonymous live streams (`access-revoked`); turning it off does not revoke member sessions or private share tokens.
+
+Read access to an office is the union of three things: the office has Public View enabled, the caller holds a
 share link for that office, or the caller is signed in as a member of it. Public means read only.
 
 ### 5.6 Health
@@ -652,7 +654,7 @@ Mapping per harness, all ending in the same `curl` or `fetch`:
 
 | Harness | Event source | Mapping |
 |---|---|---|
-| pi | session, tool, prompt and compaction hooks | The sample reports heartbeats, `tool.start`/`tool.call` with source-specific action and allowlisted tool metadata, `human.waiting`/`human.resumed`, and content-free notes for compaction start (`compact_context`), outcomes and confirmed final text responses. New visit display names are `Pi Session · <working-folder basename>`; changing the project label leaves the visit name and ID intact. A `note` with `kind: final-response` does not finish a task or alter the reported room. For pi-subagents, only an observed same-session single async launch and matching terminal lifecycle receipt produce linked child telemetry. The Pi adapter owns this translation; the collector does not recognize Pi event names. Session boundaries are not inferred run boundaries. See [Pi activity coverage](../public/guides/integrations.html#pi-actions). |
+| pi | session, tool, prompt and compaction hooks | The sample reports heartbeats, `tool.start`/`tool.call` with source-specific action and allowlisted tool metadata, `human.waiting`/`human.resumed`, and content-free notes for compaction start (`compact_context`), outcomes and confirmed final text responses. New visit display names use the working folder’s basename alone; changing the project label leaves the visit name and ID intact. A `note` with `kind: final-response` does not finish a task or alter the reported room. For pi-subagents, only an observed same-session single async launch and matching terminal lifecycle receipt produce linked child telemetry. The Pi adapter owns this translation; the collector does not recognize Pi event names. Session boundaries are not inferred run boundaries. See [Pi activity coverage](../public/guides/integrations.html#pi-actions). |
 | hermes | task loop | task pick to `run.started`, LLM call to `plan.start` and `plan.end`, tool to `tool.call` |
 | codex | CLI wrapper | argv to `run.started` with `title`, exit code to `run.finished` or `run.failed` |
 | claude CLI | wrapper | same as codex, coarser granularity |

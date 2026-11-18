@@ -12,16 +12,15 @@ export interface StreamContext {
   db: Db;
   store: PresenceStore;
   live: Live;
-  publicSlugs?: string[];
 }
 
 const PING_MS = 15_000;
 const RESYNC_MS = 60_000;
 
-export function streamRoutes({ db, store, live, publicSlugs = [] }: StreamContext): Hono {
+export function streamRoutes({ db, store, live }: StreamContext): Hono {
   const app = new Hono();
 
-  const openStream = (c: Context, orgId: string) =>
+  const openStream = (c: Context, orgId: string, publicOnly = false) =>
     streamSSE(c, async (stream) => {
       let closed = false;
 
@@ -42,6 +41,13 @@ export function streamRoutes({ db, store, live, publicSlugs = [] }: StreamContex
         const scoped = event.data as { org_id?: string } | null;
         // An unscoped publisher is a bug, not permission to broadcast across offices.
         if (scoped?.org_id !== orgId) return;
+        if (event.event === 'public-view-off') {
+          if (publicOnly && !closed) {
+            closed = true;
+            void stream.writeSSE({event:'access-revoked', data:'{}'}).catch(() => {});
+          }
+          return;
+        }
         if (flushing) void send(event.event, event.data);
         else if (pending.length < 200) pending.push(event);
       });
@@ -83,13 +89,13 @@ export function streamRoutes({ db, store, live, publicSlugs = [] }: StreamContex
   });
 
   app.get("/offices/:slug/stream", (c) => {
-    const access = resolveReadAccess(c, db, { slug: c.req.param("slug"), publicSlugs });
+    const access = resolveReadAccess(c, db, { slug: c.req.param("slug") });
     if (access.orgId === null) {
       return access.reason === "not_found"
         ? fail(c, 404, "not_found", "no office with that slug")
         : fail(c, 401, "unauthorized", "this office is private. sign in or use a share link.");
     }
-    return openStream(c, access.orgId);
+    return openStream(c, access.orgId, access.via === 'public');
   });
 
   return app;

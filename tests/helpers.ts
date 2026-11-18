@@ -36,7 +36,6 @@ export async function createOffice(
     leaseSeconds?: number;
     retentionMinutes?: number;
     dedicatedRetentionMinutes?: number;
-    publicSlugs?: string[];
     allowRegistration?: boolean;
   } = {},
 ): Promise<TestOffice> {
@@ -85,7 +84,6 @@ export async function createOffice(
     retentionMinutes: options.retentionMinutes,
     dedicatedRetentionMinutes: options.dedicatedRetentionMinutes,
     live,
-    publicSlugs: options.publicSlugs ?? [],
     allowRegistration: options.allowRegistration ?? false,
     sessionTtlMs: 30 * 86_400_000,
     demo,

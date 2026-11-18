@@ -18,11 +18,7 @@ There is no per-office process and no per-office port. One service, one port, of
 
 ## The default office
 
-A fresh install ships with one office that anyone can watch without logging in, at `/open`. That is the
-"single open office" case: you want to glance at your agents without administrating anything.
-
-The slug is configurable. `MINIOFFICE_PUBLIC_SLUGS=open,lobby` makes both public. An empty list means
-every office requires a credential. Public means read only, never write.
+New offices start private, even when named `open`. An Owner can enable Public View in Share Office to let anyone watch at `/<slug>` without a login or a share token. This is read-only. The setting is stored in SQLite and takes effect immediately.
 
 ## First run
 

@@ -35,6 +35,11 @@ CREATE TABLE IF NOT EXISTS organizations (
 CREATE UNIQUE INDEX IF NOT EXISTS organizations_slug_uq
   ON organizations(slug);
 
+-- Absence means private, including offices created after an upgrade.
+CREATE TABLE IF NOT EXISTS public_offices (
+  org_id TEXT PRIMARY KEY NOT NULL REFERENCES organizations(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS members (
   id            TEXT PRIMARY KEY,
   org_id        TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,

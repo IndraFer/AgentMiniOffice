@@ -38,7 +38,6 @@ const app = createApp({
   sessionTtlMs: config.sessionTtlMs,
   secureCookies: config.secureCookies,
   allowRegistration: config.allowRegistration,
-  publicSlugs: config.publicSlugs,
   demo: driver,
   requestLog: process.env.MINIOFFICE_REQUEST_LOG === "0" ? undefined : (line) => console.log(line),
 });

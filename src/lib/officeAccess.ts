@@ -10,17 +10,18 @@ export type ReadAccess =
 interface OfficeRow {
   id: string;
   slug: string;
+  public_view: number;
 }
 
 /**
  * One place decides who may read an office, used by both the snapshot and the stream.
  *
- * Precedence: public slug, then membership by session, then a share link. Any of them is enough.
+ * Prefer durable member/share access so disabling public viewing affects only anonymous streams.
  */
 export function resolveReadAccess(
   c: Context,
   db: Db,
-  options: { slug?: string; publicSlugs?: string[] },
+  options: { slug?: string },
 ): ReadAccess {
   const shareToken = c.req.query("share") ?? bearerToken(c.req.header("authorization"));
 
@@ -32,14 +33,10 @@ export function resolveReadAccess(
   }
 
   const office = db
-    .prepare("SELECT id, slug FROM organizations WHERE slug = ? AND archived_at IS NULL")
+    .prepare("SELECT id, slug, EXISTS(SELECT 1 FROM public_offices WHERE org_id=organizations.id) AS public_view FROM organizations WHERE slug = ? AND archived_at IS NULL")
     .get<OfficeRow>(options.slug);
 
   if (!office) return { orgId: null, reason: "not_found" };
-
-  if ((options.publicSlugs ?? []).includes(office.slug)) {
-    return { orgId: office.id, via: "public" };
-  }
 
   const session = sessionFromRequest(c, db);
   if (session?.orgId === office.id) return { orgId: office.id, via: "member" };
@@ -49,5 +46,5 @@ export function resolveReadAccess(
     if (share?.orgId === office.id) return { orgId: office.id, via: "share" };
   }
 
-  return { orgId: null, reason: "unauthorized" };
+  return office.public_view ? { orgId: office.id, via: 'public' } : { orgId: null, reason: 'unauthorized' };
 }

@@ -1234,12 +1234,37 @@ function sharingControls(office) {
     ),
     button,
   );
-  return h(
-    "details",
-    { class: "guide-topic" },
-    h("summary", {}, "Share a Read-Only View"),
-    h("div", { class: "guide-topic-body" }, form, status, revealSlot),
-  );
+  const url = `${location.origin}/${encodeURIComponent(office.slug)}`;
+  const publicLink = h('div', {class:'stack'}, h('a', {href:url}, url),
+    h('button', {type:'button', class:'btn btn-quiet btn-sm', onclick:async () => {
+      try { await navigator.clipboard.writeText(url); status.textContent='Office link copied.'; }
+      catch { status.textContent='Copy failed. Select the office URL and copy it manually.'; }
+    }}, 'Copy link'));
+  const toggle = h('input', {type:'checkbox', role:'switch', 'aria-describedby':'public-view-description'});
+  function displayMode() {
+    toggle.checked = office.public_view;
+    publicLink.hidden = !office.public_view;
+    form.hidden = office.public_view;
+    revealSlot.replaceChildren();
+  }
+  displayMode();
+  toggle.addEventListener('change', async () => {
+    toggle.disabled = true;
+    try {
+      const result = await api(officeUrlFor(office,'/public-view'), {method:'PUT',body:{enabled:toggle.checked}});
+      if (!result.ok) throw Error();
+      office.public_view = result.data.public_view;
+      displayMode();
+      status.textContent = office.public_view ? 'Public View is on.' : 'Public View is off. Existing private links still work.';
+    } catch { toggle.checked=office.public_view; status.textContent='Could not confirm the change. Refresh the overview to check its status.'; }
+    finally { toggle.disabled=false; }
+  });
+  return h('details', {class:'guide-topic'}, h('summary', {}, 'Share Office'),
+    h('div', {class:'guide-topic-body'},
+      office.role === 'owner' ? h('label', {class:'public-view-switch'}, 'Public View',
+        toggle, h('span', {class:'switch-track', 'aria-hidden':'true'})) : null,
+      h('p', {id:'public-view-description',class:'small muted'}, 'When Public View is on, anyone with the office URL can see live activity and task information without signing in. They cannot make changes. Turn it off to require a member login or private share link.'),
+      publicLink, form, status, revealSlot));
 }
 
 function officeNameEditor(office) {
@@ -2732,6 +2757,11 @@ function openStream() {
   stream?.close();
   stream = new EventSource(officeApi(`/stream${query}`));
 
+  stream.addEventListener('access-revoked', () => {
+    stream?.close();
+    // Discard the previous office DOM and recheck access (including any current login).
+    location.reload();
+  });
   stream.addEventListener("snapshot", (event) => {
     snapshot = JSON.parse(event.data);
     hideNotice();

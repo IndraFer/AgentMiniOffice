@@ -400,10 +400,32 @@ describe("office view access", () => {
     expect(viaShare.status).toBe(200);
   });
 
-  test("a public slug is readable without any credential", async () => {
-    const office = await officeWithOwner({ publicSlugs: ["test-office"] });
-    const res = await office.app.request("/api/v1/offices/test-office/snapshot");
-    expect(res.status).toBe(200);
+  test('only an Owner can toggle Public View; Off cuts an open guest stream but keeps private links', async () => {
+    const office = await officeWithOwner(), cookie = cookieOf(await signIn(office));
+    const base = '/api/v1/offices/test-office';
+    const toggle = (enabled: boolean, signedIn = true) => office.app.request(`${base}/public-view`, {
+      method:'PUT', headers:{'content-type':'application/json', ...(signedIn ? {cookie} : {})}, body:JSON.stringify({enabled})});
+    expect((await toggle(true,false)).status).toBe(401);
+    for (const role of ['admin','viewer']) {
+      office.db.prepare('UPDATE members SET role=? WHERE email=?').run(role,EMAIL);
+      expect((await toggle(true)).status).toBe(403);
+    }
+    office.db.prepare("UPDATE members SET role='owner' WHERE email=?").run(EMAIL);
+    expect((await toggle(true)).status).toBe(200);
+    expect((await office.app.request(`${base}/snapshot`)).status).toBe(200);
+    const guest=(await office.app.request(`${base}/stream`)).body!.getReader();
+    const shared=(await office.app.request(`${base}/stream?share=${office.shareToken}`)).body!.getReader();
+    try {
+      await guest.read(); await shared.read();
+      expect((await toggle(false)).status).toBe(200);
+      office.live.bus.publish({event:'roster',data:{org_id:office.orgId,fixture:'post-disable'}});
+      expect(new TextDecoder().decode((await guest.read()).value)).toContain('access-revoked');
+      expect((await guest.read()).done).toBe(true);
+      expect(new TextDecoder().decode((await shared.read()).value)).toContain('post-disable');
+      expect((await office.app.request(`${base}/snapshot`)).status).toBe(401);
+      expect((await office.app.request(`${base}/stream`)).status).toBe(401);
+      expect((await office.app.request(`${base}/snapshot?share=${office.shareToken}`)).status).toBe(200);
+    } finally { await guest.cancel(); await shared.cancel(); }
   });
 
   test("an unknown slug is a 404, not a 401", async () => {
@@ -413,12 +435,11 @@ describe("office view access", () => {
   });
 
   test("an agent token cannot read the office view", async () => {
-    const office = await createOffice({ publicSlugs: ["test-office"] });
+    const office = await createOffice();
     const res = await office.app.request("/api/v1/offices/test-office/snapshot", {
       headers: { authorization: `Bearer ${office.agentToken}` },
     });
-    // Public slug means readable, but the point is that the token itself grants nothing extra.
-    expect([200, 401]).toContain(res.status);
+    expect(res.status).toBe(401);
   });
 });
 

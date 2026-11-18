@@ -21,7 +21,8 @@ export type LiveChannel =
   | "snapshot"
   | "signal"
   | "project"
-  | "roster";
+  | "roster"
+  | "public-view-off";
 
 export interface LiveEvent {
   event: LiveChannel;

@@ -10,10 +10,9 @@ import { ROOMS } from "../lib/vocab";
 export interface ReadContext {
   db: Db;
   store: PresenceStore;
-  publicSlugs?: string[];
 }
 
-export function readRoutes({ db, store, publicSlugs = [] }: ReadContext): Hono {
+export function readRoutes({ db, store }: ReadContext): Hono {
   const app = new Hono();
 
   // Static vocabulary. Useful for shims, contains nothing sensitive.
@@ -28,9 +27,9 @@ export function readRoutes({ db, store, publicSlugs = [] }: ReadContext): Hono {
 
   // The office view URL. Public slug, member session, or share link.
   app.get("/offices/:slug/snapshot", (c) => {
+    c.header('Cache-Control', 'private, no-store');
     const access = resolveReadAccess(c, db, {
       slug: c.req.param("slug"),
-      publicSlugs,
     });
 
     if (access.orgId === null) {

@@ -20,6 +20,7 @@ services:
       MINIOFFICE_SESSION_TTL_DAYS:
       MINIOFFICE_SECURE_COOKIES:
       MINIOFFICE_ALLOW_REGISTRATION:
+      # Compatibility only: import existing public offices on the first v1 database upgrade.
       MINIOFFICE_PUBLIC_SLUGS:
     ports:
       - "127.0.0.1:${OFFICE_HOST_PORT:-3000}:${MINIOFFICE_PORT:-3000}"

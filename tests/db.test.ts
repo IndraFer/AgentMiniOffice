@@ -20,10 +20,22 @@ describe("db adapter", () => {
     db.close();
   });
 
-  test("schema reports version 1", async () => {
+  test('public viewing migrates only existing allowed offices once', async () => {
+    const db=await freshDb(), add=db.prepare('INSERT INTO organizations(id,name,slug,created_at) VALUES(?,?,?,?)');
+    for(const slug of ['visible','hidden']) add.run(uuidv7(),slug,slug,now);
+    db.exec('UPDATE schema_version SET version=1');
+    applySchema(db,'docs/SCHEMA.sql','visible,future');
+    const enabled=()=>db.prepare('SELECT slug FROM organizations JOIN public_offices ON org_id=id').all();
+    expect(enabled()).toEqual([{slug:'visible'}]);
+    db.exec('DELETE FROM public_offices'); add.run(uuidv7(),'future','future',now);
+    applySchema(db,'docs/SCHEMA.sql','visible,future');
+    expect(enabled()).toEqual([]); db.close();
+  });
+
+  test("schema reports version 2", async () => {
     const db = await freshDb();
     const row = db.prepare("SELECT max(version) AS v FROM schema_version").get<{ v: number }>();
-    expect(Number(row?.v)).toBe(1);
+    expect(Number(row?.v)).toBe(2);
     db.close();
   });
 

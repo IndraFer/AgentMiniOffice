@@ -195,10 +195,11 @@ The Agents registration form remains separate and creates a dedicated reporting 
 - Human roles display as **Owner**, **Operator**, **Viewer**. Operator maps to stored `admin` without
   changing permissions. Viewers retain read navigation, but do not see credential issuance, demo,
   task creation/cancellation or share-creation controls. Server checks remain authoritative.
-- Sharing is an explicit disclosure with a label, 1/7/30-day expiry (7 by default), and required
+- **Share Office** includes an Owner-only Public View switch and an explanation of anonymous read access. When enabled, a short office URL and Copy link replace the private link form. Disabling it stops public-only live streams without revoking private links.
+- Private link creation is an explicit disclosure with a label, 1/7/30-day expiry (7 by default), and required
   acknowledgement that office information is visible to anyone holding the link. A rejected request
   keeps the form available. Success shows the link once and its server-returned expiry; the creation
-  form is then hidden. This does not add listing/revocation, guest redaction or live-stream revalidation.
+  form is then hidden. This does not add private link listing/revocation or guest redaction.
 - Agent registration shows the one-time token **before** refreshing the list. A refresh failure must
   not discard it. Agent IDs remain visible in the table; raw tokens are not persisted in browser storage.
 - The Owner's full-width Workspace Access entry opens compact, independently sized cards. Changes with irreversible effects use a modal with Cancel focused and Escape to cancel. Manual refresh announces the result in an inline status banner. Expanded roster details use an X with an accessible name.

@@ -1414,6 +1414,58 @@ body {
   cursor: pointer;
 }
 
+.public-view-switch {
+  display: flex;
+  inline-size: fit-content;
+  margin-inline: auto;
+  align-items: center;
+  gap: var(--s3);
+  min-block-size: 44px;
+  position: relative;
+  font-weight: 600;
+  cursor: pointer;
+}
+.public-view-switch input {
+  position: absolute;
+  inset-inline-end: 0;
+  inline-size: 44px;
+  block-size: 24px;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+.public-view-switch .switch-track {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  inline-size: 44px;
+  block-size: 24px;
+  flex: none;
+  padding-inline: 3px;
+  border: 1px solid var(--muted);
+  border-radius: 999px;
+  background: var(--surface-2);
+  pointer-events: none;
+}
+.public-view-switch .switch-track::before {
+  content: '';
+  inline-size: 16px;
+  block-size: 16px;
+  border-radius: 50%;
+  background: var(--text-2);
+}
+.public-view-switch input:checked + .switch-track { background: var(--accent); border-color: var(--accent); }
+.public-view-switch input:checked + .switch-track::before { margin-inline-start: 20px; background: var(--on-accent); }
+.public-view-switch input:focus-visible + .switch-track { outline: 2px solid var(--accent); outline-offset: 3px; }
+.public-view-switch input:disabled + .switch-track { opacity: .65; }
+@media (prefers-reduced-motion: no-preference) {
+  .public-view-switch .switch-track::before { transition: margin-inline-start var(--t-fast) var(--ease); }
+}
+@media (forced-colors: active) {
+  .public-view-switch .switch-track::before { background: ButtonText; forced-color-adjust: none; }
+  .public-view-switch input:checked + .switch-track::before { background: ButtonText; }
+}
+
 .consent input {
   flex: none;
   margin-block-start: 0.25em;

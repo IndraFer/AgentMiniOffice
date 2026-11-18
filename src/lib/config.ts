@@ -57,8 +57,4 @@ export const config = {
   sessionTtlMs: positiveInt(process.env.MINIOFFICE_SESSION_TTL_DAYS, 30) * 86_400_000,
   secureCookies: process.env.MINIOFFICE_SECURE_COOKIES === "1",
   allowRegistration: process.env.MINIOFFICE_ALLOW_REGISTRATION === "1",
-  publicSlugs: (process.env.MINIOFFICE_PUBLIC_SLUGS ?? "open")
-    .split(",")
-    .map((slug) => slug.trim())
-    .filter(Boolean),
 } as const;
