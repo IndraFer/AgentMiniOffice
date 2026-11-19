@@ -34,6 +34,7 @@ project and its Hermes connector follow the [versioning policy](CONTRIBUTING.md#
 
 ### Changed
 
+- Moved the lounge plant alongside the sofa. Avatars now water it from the front, keeping the aisle to the coffee machine clear.
 - Start Demo now shows Pi Agent, Hermes, Codex, OpenClaw, Mercury, Claude, Gemini and Antigravity when eight agents are selected. These are synthetic demo labels, not new connectors or affiliations. Older panel-owned demo rows remain eligible for cleanup.
 - Reworked the GitHub README around first-time setup, with a synthetic office screenshot, a Mermaid data-flow diagram, Bun/Node and executable instructions, and a breakdown of scene actions, weather, privacy and task storage.
 - Added a non-root Dockerfile and a loopback-only Docker Compose service with a readiness check and no mounts by default. The deployment guide distinguishes restarting a container from replacing it and losing its SQLite state.
