@@ -1287,9 +1287,13 @@ export function createOfficeScene({ container, onSelect }) {
     // A desk can also remain visible during room hysteresis. Never type in transit or on a sofa.
     const toolKeyboard = !selected && arrived && ['desk','intern-desk'].includes(actor.target.room) && seated &&
       actor.data.signal?.action === 'use_tools' && ['tools','none'].includes(activity.action);
-    const interacting = arrived && (variant || (!(selected && rules) && (toolKeyboard || alternate || servesRoom(actor.target, activity.action === 'other' ? 'other' : actor.data.presence?.room))));
+    const toolStation = arrived && !selected && activity.action==='tools' && ['library','printer'].includes(actor.target.id);
+    const childAtDesk = arrived && seated && actor.data.actorKind==='subagent' && actor.room==='intern-desk' && ['desk','intern-desk'].includes(actor.target.room);
+    const interacting = arrived && (childAtDesk || toolStation || variant || (!(selected && rules) && (toolKeyboard || alternate || servesRoom(actor.target, activity.action === 'other' ? 'other' : actor.data.presence?.room))));
     const cue = eventCue(actor.data);
     let action = cue?.kind === "error" ? "error" : variant ? variant.pose : toolKeyboard ? 'typing' : interacting ? activity.action : "none";
+    if(cue?.kind!=='error' && toolStation) action=actor.target.id==='library' ? 'reading' : 'output';
+    if(cue?.kind!=='error' && childAtDesk && ['typing','none','waiting'].includes(action)) action='typing';
     if (arrived && actor.finalStop) action = actor.finalStop === 'printer' ? 'output' : 'communication';
     if (!variant && interacting && actor.target.object?.startsWith("archive") && action === "reading")
       action = "output";
@@ -1308,6 +1312,8 @@ export function createOfficeScene({ container, onSelect }) {
     if (moving) activityText = (alternate || actor.workReturning) ? activity.label : `Walking · ${activity.label}`;
     const stationWait = active && actor.mode === 'waiting' && !!workVariants(actor.data) && !actor.holdingIntent && !actor.path.length;
     if (actor.mode === 'waiting') activityText = stationWait ? `${activity.label} · Waiting for Station` : 'Waiting for Station';
+    if(childAtDesk && activity.action==='waiting') activityText='Active Subagent Run';
+    if(actor.mode==='yielding') activityText='Waiting for a Clear Path';
     if (actor.mode === "blocked") activityText = "Route Unavailable";
     if (actor.ambient)
       activityText = `Ambient · ${moving ? "Walking" : ambient ? ambient[1] : "Standby"}`;

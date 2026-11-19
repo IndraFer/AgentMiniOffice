@@ -58,10 +58,10 @@ export function createLayout() {
   for (const [i, [x, z]] of [
     [14.2, 4.9],
     [16.5, 5.4],
-    [18.8, 5.1],
+    [19.45, 5.45], // keep the aisle to the window seats open when this spot is occupied
     [16.5, 1],
     [14.1, 1.75],
-    [18.9, 1.75],
+    [19.2, 1.65], // clear the adjacent chair's side-entry portal
   ].entries()) {
     slot(`attention-${i}`, "meeting", x, z, 0, "standing", "meeting-table");
     slots.at(-1).attentionOnly = true;
@@ -128,6 +128,12 @@ export function createLayout() {
   ];
   for (let i = 0; i < 8; i++)
     slot(`waiting-${i}`, "lobby", 3.9 + (i % 4) * 1.5, 10.35 + Math.floor(i / 4) * 1.55, 0);
+  // Each cushion has a front-only entry and stays reserved until its occupant clears it.
+  const cushions = slots.filter(s=>s.object==='sofa').map(s=>{
+    s.chairId=`cushion-${s.id}`;
+    s.approach={x:s.x,z:s.z+.85};
+    return {id:s.chairId,x:s.x,z:9.3,w:1.9,d:1.1};
+  });
   const chairs = slots
     .filter((s) => s.pose === "seated" && s.object !== "sofa")
     .map((s) => {
@@ -154,6 +160,7 @@ export function createLayout() {
           : [item.clearance ?? item],
       ),
       ...partitions,
+      ...cushions,
       ...chairs,
     ],
     rugs: [
@@ -164,6 +171,12 @@ export function createLayout() {
   };
 }
 
+const BODY_GAP = 0.68;
+function clearsBody(a, b, p) {
+  const x=b.x-a.x, z=b.z-a.z, length=x*x+z*z;
+  const t=length ? Math.max(0,Math.min(1,((p.x-a.x)*x+(p.z-a.z)*z)/length)) : 0;
+  return (a.x+t*x-p.x)**2 + (a.z+t*z-p.z)**2 >= BODY_GAP**2;
+}
 export function createNavigator(layout, radius = 0.27) {
   const spacing = 0.25;
   const cols = Math.round(layout.width / spacing) + 1;
@@ -208,7 +221,7 @@ export function createNavigator(layout, radius = 0.27) {
   }
   const point = (i) => ({ x: (i % cols) * spacing, z: Math.floor(i / cols) * spacing });
   const open = Array.from({ length: cols * rows }, (_, i) => isOpen(point(i)));
-  function connector(p) {
+  function connector(p, passable) {
     const cx = Math.round(p.x / spacing),
       cz = Math.round(p.z / spacing);
     const candidates = [];
@@ -217,7 +230,7 @@ export function createNavigator(layout, radius = 0.27) {
         const x = cx + dx,
           z = cz + dz,
           i = z * cols + x;
-        if (x >= 0 && x < cols && z >= 0 && z < rows && open[i] && clear(p, point(i)))
+        if (x >= 0 && x < cols && z >= 0 && z < rows && open[i] && passable(p, point(i)))
           candidates.push(i);
       }
     return candidates.sort(
@@ -226,11 +239,12 @@ export function createNavigator(layout, radius = 0.27) {
         Math.hypot(point(b).x - p.x, point(b).z - p.z),
     )[0];
   }
-  function transitRoute(from, to) {
-    if (!to || !isOpen(from) || !isOpen(to)) return null;
-    if (clear(from, to)) return [{ x: to.x, z: to.z }];
-    const start = connector(from),
-      end = connector(to);
+  function transitRoute(from, to, bodies) {
+    const passable = bodies?.length ? (a,b) => bodies.every(p=>clearsBody(a,b,p)) && clear(a,b) : clear;
+    if (!to || !isOpen(from) || !isOpen(to) || !passable(to,to)) return null;
+    if (passable(from, to)) return [{ x: to.x, z: to.z }];
+    const start = connector(from, passable),
+      end = connector(to, passable);
     if (start === undefined || end === undefined) return null;
     const frontier = new Set([start]),
       visited = new Set();
@@ -259,7 +273,7 @@ export function createNavigator(layout, radius = 0.27) {
           next = 0;
         while (next < raw.length) {
           let farthest = next;
-          for (let j = next; j < raw.length && clear(anchor, raw[j]); j++) farthest = j;
+          for (let j = next; j < raw.length && passable(anchor, raw[j]); j++) farthest = j;
           smooth.push(raw[farthest]);
           anchor = raw[farthest];
           next = farthest + 1;
@@ -283,7 +297,7 @@ export function createNavigator(layout, radius = 0.27) {
             z >= rows ||
             !open[i] ||
             visited.has(i) ||
-            !clear(point(current), point(i))
+            !passable(point(current), point(i))
           )
             continue;
           const cost = costs.get(current) + Math.hypot(dx, dz) * spacing;
@@ -301,16 +315,17 @@ export function createNavigator(layout, radius = 0.27) {
   function clearDock(a, b, seat) {
     const slot = docks.get(seat?.id);
     if (!slot) return false;
-    const onAccess = (p) =>
-      Math.abs(p.z - slot.z) < 1e-6 && p.x >= slot.x - 1e-6 && p.x <= slot.approach.x + 1e-6;
+    const onAccess = (p) => slot.object==='sofa'
+      ? Math.abs(p.x-slot.x)<1e-6 && p.z>=slot.z-1e-6 && p.z<=slot.approach.z+1e-6
+      : Math.abs(p.z - slot.z) < 1e-6 && p.x >= slot.x - 1e-6 && p.x <= slot.approach.x + 1e-6;
     return onAccess(a) && onAccess(b) && clear(a, b, slot.chairId);
   }
-  function route(from, to, departure = null) {
+  function route(from, to, departure = null, bodies = null) {
     const entry = to?.approach ? docks.get(to.id) : null,
       exit = docks.get(departure?.id);
     if (departure && (!exit || !clearDock(from, exit.approach, exit))) return null;
     if (entry && !clearDock(entry.approach, entry, entry)) return null;
-    const path = transitRoute(exit?.approach ?? from, entry?.approach ?? to);
+    const path = transitRoute(exit?.approach ?? from, entry?.approach ?? to, bodies);
     if (!path) return null;
     if (exit) path.unshift({ ...exit.approach, dock: exit.id, releaseDock: true });
     if (entry) {
@@ -332,6 +347,21 @@ export function servesRoom(slot, room) {
 export function createSimulation(layout = createLayout(), allowWorkTrips = () => true) {
   const navigator = createNavigator(layout);
   const actors = new Map();
+  const bodiesExcept = actor => [...actors.values()].filter(a=>a!==actor).map(a=>a.position);
+  // Spread a simultaneous snapshot around the entrance instead of stacking models in one pixel.
+  function spawnPosition() {
+    const bodies=bodiesExcept(null), start=layout.entrance;
+    for(let ring=0; ring<Math.ceil(Math.max(layout.width,layout.depth)/.8);ring++) {
+      for(let z=-ring;z<=ring;z++) for(let x=-ring;x<=ring;x++) {
+        if(Math.max(Math.abs(x),Math.abs(z))!==ring) continue;
+        const p={x:start.x+x*.8,z:start.z+z*.8};
+        if(navigator.isOpen(p) && bodies.every(b=>clearsBody(p,p,b)) && !layout.slots.some(s=>Math.hypot(s.x-p.x,s.z-p.z)<BODY_GAP || s.approach && Math.hypot(s.approach.x-p.x,s.approach.z-p.z)<BODY_GAP)) return p;
+      }
+    }
+    return null;
+  }
+  const childDesk = a => a.data.actorKind==='subagent' && a.room==='intern-desk' && a.target?.room==='desk';
+  const toolStop = a => a.data.signal?.action==='use_tools' && !a.data.signal.variant && ['library','printer'].includes(a.target?.id);
   let elapsed = 0;
   let viewpoint = { x: 10, z: 40 };
   const facesView = (slot) => {
@@ -356,7 +386,7 @@ export function createSimulation(layout = createLayout(), allowWorkTrips = () =>
   const wantedRoom = (data) => {
     if (standbyEligible(data)) return "pantry";
     // An explicit idle report may retain the last work room. Do not keep that station reserved.
-    if (stationActivity(data).action === "waiting") return "lobby";
+    if (stationActivity(data).action === "waiting") return data.actorKind==='subagent' && data.runs?.some(r=>r.state==='active') ? 'intern-desk' : 'lobby';
     if (stationActivity(data).action==='human-waiting') return 'meeting';
     if (stationActivity(data).action==='other') return 'other';
     const room = data.presence?.room ?? "lobby";
@@ -394,6 +424,7 @@ export function createSimulation(layout = createLayout(), allowWorkTrips = () =>
         }
       };
       target = pick(candidates) ?? (!selected ? pick(rules.overflow) : null);
+      if (!target && !selected && actor.data.signal.action==='use_tools') target=available.find(s=>['library','printer'].includes(s.id) && !needsStation(actor,s.room));
     } else if (room === 'library' && actor.data.signal?.action === 'compact_context') {
       target = available.find(s => s.room === room && s.object?.startsWith('archive'));
     } else if (room === 'other') {
@@ -407,6 +438,7 @@ export function createSimulation(layout = createLayout(), allowWorkTrips = () =>
         regular.find((s) => s.room === room && !s.object?.startsWith("archive")) ??
         regular.find((s) => s.room === room) ??
         regular.find((s) => s.alsoServes === room);
+      if(!target && room==='intern-desk' && actor.data.actorKind==='subagent') target=spareLaptop();
       // A full pantry is not a work queue. Take an unreserved observation spot until
       // the next ambient trip; keep tool stations free and the reported room unchanged.
       if (!target && actor.ambient && room === 'pantry') {
@@ -515,9 +547,11 @@ export function createSimulation(layout = createLayout(), allowWorkTrips = () =>
     for (const data of [...visible].sort((a, b) => a.id.localeCompare(b.id))) {
       let actor = actors.get(data.id);
       if (!actor) {
+        const position=spawnPosition();
+        if(!position) continue;
         actor = {
           data,
-          position: { ...layout.entrance },
+          position,
           angle: Math.PI,
           target: null,
           dock: null,
@@ -599,7 +633,17 @@ export function createSimulation(layout = createLayout(), allowWorkTrips = () =>
     const trip = trips?.length && signal?.type === 'tool.start' && signal.id && allowWorkTrips() &&
       !actor.ambient && !actor.attention && !actor.holdingIntent && actor.room === presence?.room &&
       trips[hash(actor.data.id + signal.id) % trips.length];
-    const destination = trip && layout.slots.find(trip.matches);
+    const tools=trip && signal.action==='use_tools';
+    const circuit=['tool-cart','library','printer'];
+    const freeToolStop = () => {
+      for(let i=0;i<circuit.length;i++) {
+        const id=circuit[((actor.toolVisit ?? 0)+i)%circuit.length];
+        const slot=layout.slots.find(s=>s.id===id);
+        if(slot && slot!==actor.target && (slot.room==='workshop' || !needsStation(actor,slot.room)) &&
+          ![...actors.values()].some(a=>a!==actor && (a.target===slot || a.dock===slot))) return slot;
+      }
+    };
+    const destination = trip && (actor.tripTarget ?? (tools ? freeToolStop() : layout.slots.find(trip.matches)));
     const place = destination?.id;
     const onTrip = !!actor.tripTarget && actor.target === actor.tripTarget;
     if (!onTrip) actor.tripTarget = null;
@@ -613,18 +657,18 @@ export function createSimulation(layout = createLayout(), allowWorkTrips = () =>
       return;
     }
     const boardBusy = place === 'board-writing' && (boardNeeded(actor) || [...actors.values()].some(a => a !== actor && a.target?.id === 'whiteboard'));
-    if (onTrip && boardBusy) { actor.tripTarget = null; actor.workDwell = 0; actor.workReturning = true; assign(actor); return; }
+    if (onTrip && (boardBusy || (tools && destination.room!=='workshop' && needsStation(actor,destination.room)))) { actor.tripTarget = null; actor.workDwell = 0; actor.workReturning = true; assign(actor); return; }
     if (actor.path.length || actor.blocked || !['standing','seated'].includes(actor.mode)) return;
     if (!onTrip && !servesRoom(actor.target, actor.room)) return;
     actor.workReturning = false;
     actor.workDwell += dt;
-    const dwell = onTrip ? 12 : place === 'tool-cart' ? 10 + hash(actor.data.id) % 7 : 50 + hash(actor.data.id) % 16;
+    const dwell = onTrip ? 12 : tools ? 10 + hash(actor.data.id) % 7 : 50 + hash(actor.data.id) % 16;
     if (actor.workDwell < dwell) return;
     actor.workDwell = 0;
     if (onTrip) { actor.tripTarget = null; actor.workReturning = true; assign(actor); return; }
-    if (boardBusy || [...actors.values()].some(a => a.target?.id === place)) return;
+    if (boardBusy || [...actors.values()].some(a => a.target?.id === place || a.dock?.id === place)) return;
     const path = navigator.route(actor.position, destination, actor.dock);
-    if (path && destination !== actor.target) { actor.target = actor.tripTarget = destination; actor.path = path; }
+    if (path && destination !== actor.target) { actor.target = actor.tripTarget = destination; actor.path = path; if(tools) actor.toolVisit=circuit.indexOf(place)+1; }
   }
   function step(delta) {
     const dt = Math.min(Math.max(delta, 0), 0.1);
@@ -687,11 +731,11 @@ export function createSimulation(layout = createLayout(), allowWorkTrips = () =>
       if (selected) {
         // Reclaim a released preferred station, and yield borrowed equipment to native work.
         if (elapsed >= (actor.nextChoiceCheck ?? 0)) { assign(actor); actor.nextChoiceCheck=elapsed+0.45; }
-      } else if (elapsed - actor.roomSince >= 0.42 && actor.target?.room !== 'work-visit' && !servesRoom(actor.target, actor.room)) assign(actor);
+      } else if (elapsed - actor.roomSince >= 0.42 && actor.target?.room !== 'work-visit' && !actor.tripTarget && !servesRoom(actor.target, actor.room) && elapsed >= (actor.nextRetry ?? 0)) { assign(actor); actor.nextRetry=elapsed+.45; }
       }
       // Waiting actors can take released seats without restarting the intent debounce.
       let budget = 2.4 * dt;
-      let walking = false;
+      let walking = false, yielding = false;
       while (actor.path.length && budget > 0) {
         const next = actor.path[0];
         if (next.dock) actor.dock = layout.slots.find((s) => s.id === next.dock);
@@ -705,8 +749,18 @@ export function createSimulation(layout = createLayout(), allowWorkTrips = () =>
           continue;
         }
         const travel = Math.min(distance, budget);
-        actor.position.x += (dx / distance) * travel;
-        actor.position.z += (dz / distance) * travel;
+        const stepTo={x:actor.position.x+(dx/distance)*travel,z:actor.position.z+(dz/distance)*travel};
+        const bodies=bodiesExcept(actor);
+        if (!bodies.every(p=>clearsBody(actor.position,stepTo,p))) {
+          yielding=true;
+          if(elapsed >= (actor.replanAt ?? 0)) {
+            actor.replanAt=elapsed+.45+(hash(actor.data.id)%9)*.04;
+            const detour=navigator.route(actor.position,actor.leaving ? layout.entrance : actor.target,actor.dock,bodies);
+            if(detour) actor.path=detour;
+          }
+          break;
+        }
+        Object.assign(actor.position,stepTo);
         actor.heading = Math.atan2(dx, dz);
         budget -= travel;
         walking = true;
@@ -721,10 +775,10 @@ export function createSimulation(layout = createLayout(), allowWorkTrips = () =>
       if(actor.leaving && !actor.path.length){actors.delete(actor.data.id);continue;}
       actor.mode = walking
         ? "walking"
-        : actor.blocked
+        : yielding ? 'yielding' : actor.blocked
           ? "blocked"
           : !servesRoom(actor.target, actor.room) && actor.target?.room !== 'writing-overflow' && actor.target?.room !== 'work-visit'
-              && !atStation(workVariants(actor.data)?.overflow,actor.target)
+              && !childDesk(actor) && !toolStop(actor) && !atStation(workVariants(actor.data)?.overflow,actor.target)
             ? "waiting"
             : actor.target.pose;
       const heading = walking ? actor.heading : (actor.target?.rot ?? actor.angle);

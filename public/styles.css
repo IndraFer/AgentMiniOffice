@@ -2095,6 +2095,24 @@ body {
   font-size: var(--fs-sm);
 }
 
+.list.active-runs li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px var(--s2);
+}
+
+.run-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  white-space: nowrap;
+}
+
+.run-parent {
+  grid-column: 1 / -1;
+  overflow-wrap: anywhere;
+}
+
 .list .title {
   min-width: 0;
   overflow: hidden;

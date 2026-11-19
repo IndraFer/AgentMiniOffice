@@ -2354,21 +2354,22 @@ function agentBody(agent, peers = snapshot?.agents ?? [], inspector = false) {
     runs.length
       ? h(
           "ul",
-          { class: "list" },
+          { class: "list active-runs" },
           ...runs.map((run) =>
             h(
               "li",
               {},
               h("span", { class: "title" }, run.title ?? "(untitled)"),
-              run.parent_run_id ? h("span", { class: "badge" }, "Subagent") : null,
+              h("span", { class: "run-meta" },
+                run.parent_run_id ? h("span", { class: "badge" }, "Subagent") : null,
+                h("span", { class: "tiny muted" }, ago(run.started_at))),
               run.parent_run_id
                 ? h(
                     "span",
-                    { class: "tiny muted" },
+                    { class: "run-parent tiny muted" },
                     `Parent: ${peers.find((item) => item.id === run.parent_agent_id)?.name ?? "Known Run"}`,
                   )
                 : null,
-              h("span", { class: "tiny muted" }, ago(run.started_at)),
             ),
           ),
         )

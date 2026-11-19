@@ -122,6 +122,8 @@ project and its Hermes connector follow the [versioning policy](CONTRIBUTING.md#
 
 ### Fixed
 
+- Avatars give one another clearance in transit and keep a lounge cushion reserved until its occupant exits. Child runs can use spare desks, and sustained tool work can visit the free library or printer without changing the reported action.
+- Active Runs keeps the Subagent badge beside its age and wraps the parent name on a separate line in both agent detail views.
 - Walking routes now avoid chair footprints and use reserved side-entry/exit segments for seating,
   including interrupted docking. Seats remain reserved until departing actors clear them.
 - Waiting-for-human poses choose standing or one of two view-facing window seats once per episode.

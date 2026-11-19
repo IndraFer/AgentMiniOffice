@@ -158,6 +158,26 @@ describe("office state", () => {
     for (let i = 0; i < 100; i++) sim.step(0.05);
     expect(actor.target).toBe(target);
   });
+  test('lounge occupants stay separated at spawn, in transit and during seat turnover', () => {
+    const sim=createSimulation(layout), crew=Array.from({length:5},(_,i)=>agent(`guest-${i}`,'pantry'));
+    sim.update(crew);
+    for(let i=0;i<500;i++) {
+      if(i===200) sim.update([agent('guest-0','desk'),...crew.slice(1)]);
+      const people=[...sim.actors.values()];
+      for(let j=0;j<people.length;j++) for(const b of people.slice(j+1)) {
+        const a=people[j]; expect(Math.hypot(a.position.x-b.position.x,a.position.z-b.position.z)).toBeGreaterThanOrEqual(.65-1e-8);
+      }
+      sim.step(.1);
+    }
+    expect(sim.actors.get('guest-0').mode).toBe('seated');
+    expect([...sim.actors.values()].filter(a=>a.target?.object==='sofa' && a.mode==='seated')).toHaveLength(2);
+  });
+  test('active child runs borrow distinct spare desks before queuing',()=>{
+    const sim=createSimulation(layout);sim.update(Array.from({length:3},(_,i)=>({...agent(`sub-${i}`,'intern-desk'),actorKind:'subagent'})));
+    for(let i=0;i<250;i++) sim.step(.1);
+    const actors=[...sim.actors.values()];expect(actors.map(a=>a.mode)).toEqual(['seated','seated','seated']);
+    expect(new Set(actors.map(a=>a.target.id)).size).toBe(3);
+  });
   test('lobby slots stay clear of the occupied cabinet and the entrance', () => {
     const cabinet = layout.slots.find(s => s.id === 'archive');
     for (const slot of layout.slots.filter(s => s.room === 'lobby')) {
@@ -185,12 +205,14 @@ describe("office state", () => {
     const desks=Array.from({length:6},(_,i)=>agent(`writer-${i}`));
     pair.update([worker('bench'),worker('cart'),worker('queue'),...desks]);
     for(let i=0;i<300;i++) pair.step(.1);
-    expect(overflow.mode).toBe('waiting');expect(desks.every(d=>pair.actors.get(d.id).mode==='seated')).toBe(true);
+    expect(overflow.mode).toBe('standing');expect(['library','printer']).toContain(overflow.target.id);expect(desks.every(d=>pair.actors.get(d.id).mode==='seated')).toBe(true);
     pair.update([worker('bench'),worker('queue'),...desks]);for(let i=0;i<250;i++)pair.step(.1);
     expect([overflow.mode,overflow.target.id]).toEqual(['standing','tool-cart']);
     const solo=createSimulation(layout);solo.update([worker('solo')]);const stops=new Set();
     for(let i=0;i<330;i++){solo.step(.1);const a=solo.actors.get('solo');if(a.mode==='standing') stops.add(a.target.object);}
     expect([...stops]).toEqual(['workshop','tool-cart']);
+    for(let i=0;i<2000;i++){solo.step(.1);const a=solo.actors.get('solo');if(a.mode==='standing') stops.add(a.target.object);}
+    expect(stops.has('library') && stops.has('printer')).toBe(true);
   });
   test("short room bursts update intent without starting a trip", () => {
     const sim = createSimulation(layout);
