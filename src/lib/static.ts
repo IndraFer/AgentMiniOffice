@@ -30,17 +30,23 @@ const CONTENT_TYPES: Record<string, string> = {
  *   a path without an extension  the shell (/ , /dashboard , /<slug>)
  *   anything else     JSON 404
  */
-export function staticRoutes(publicDir: string): Hono {
+export function staticRoutes(publicDir: string, publicOfficeName?: (slug: string) => string | undefined): Hono {
   const root = path.resolve(publicDir);
   const indexFile = path.join(root, "index.html");
   const app = new Hono();
 
-  function servePage(c: Context, file: string) {
-    // Use only the request origin, never the office slug, query string or proxy-supplied host.
+  function servePage(c: Context, file: string, slug?: string) {
+    // Use public metadata only, even when the requester has a member session or share token.
     const url = new URL(c.req.url);
     if (c.req.header('x-forwarded-proto') === 'https') url.protocol = 'https:';
-    const origin = url.origin.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-    const html = fs.readFileSync(file, 'utf8').replaceAll('__PUBLIC_ORIGIN__', () => origin);
+    const name = slug ? publicOfficeName?.(slug) : undefined;
+    const values: Record<string, string> = {
+      __PUBLIC_ORIGIN__: url.origin,
+      __PREVIEW_URL__: `${url.origin}/${name && slug ? encodeURIComponent(slug) : ''}`,
+      __PREVIEW_TITLE__: name ? `${name} · Agent Mini Office` : 'Agent Mini Office — a virtual office for coding agents',
+    };
+    const html = fs.readFileSync(file, 'utf8').replace(/__(?:PUBLIC_ORIGIN|PREVIEW_URL|PREVIEW_TITLE)__/g, key =>
+      values[key]!.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'));
     return c.html(html, 200, { 'cache-control': 'no-store' });
   }
 
@@ -82,7 +88,10 @@ export function staticRoutes(publicDir: string): Hono {
     }
 
     // Client routes: /dashboard and /<slug> both render the same shell.
-    if (path.extname(pathname) === "") return servePage(c, indexFile);
+    if (path.extname(pathname) === "") {
+      const slug = /^\/([^/]+)\/?$/.exec(pathname)?.[1];
+      return servePage(c, indexFile, slug === 'dashboard' ? undefined : slug);
+    }
 
     return jsonNotFound(c, pathname);
   });

@@ -81,7 +81,9 @@ export function createApp(ctx: AppContext): Hono {
   );
 
   // Registered last so it only catches what the API did not claim.
-  app.route("/", staticRoutes(ctx.publicDir ?? "public"));
+  const publicPreview = ctx.db.prepare(`SELECT o.name FROM public_offices p
+    JOIN organizations o ON o.id = p.org_id WHERE o.slug = ? AND o.archived_at IS NULL`);
+  app.route("/", staticRoutes(ctx.publicDir ?? "public", slug => publicPreview.get<{ name: string }>(slug)?.name));
 
   app.notFound((c) =>
     c.json(
