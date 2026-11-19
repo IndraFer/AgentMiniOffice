@@ -3,6 +3,7 @@
 import atexit
 import logging
 import re
+import sqlite3
 import threading
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from .panel import Panel, config, mappings
 from .visit import Visit
 
 HOOKS = (
+    "post_gateway_admission",
     "on_session_open",
     "on_session_start",
     "on_session_reset",
@@ -119,7 +121,9 @@ class Connector:
                         return self.ctx.inject_message(prompt, **kwargs)
 
                     visit = self.visits[sid] = Visit(
-                        Panel(self.origin, self.token, folder or "Workspace", self.project),
+                        Panel(
+                            self.origin, self.token, folder or "Workspace", self.project
+                        ),
                         key,
                         inject,
                         self.interval,
@@ -177,14 +181,22 @@ def register(ctx):
     from plugins.plugin_storage import plugin_data_dir
 
     try:
-        origin, token, name, project = config(plugin_data_dir("agent-mini-office") / "config.json")
-        connector = install(ctx, origin, token, name=name, project=project)
+        home = plugin_data_dir("agent-mini-office")
+        origin, token, name, project, mode = config(home / "config.json")
+        if mode == "daemon":
+            from .daemon import DaemonConnector
+
+            connector = bind(
+                ctx, DaemonConnector(home, origin, token, name, project, mappings())
+            )
+        else:
+            connector = install(ctx, origin, token, name=name, project=project)
     except FileNotFoundError:
         bind(ctx, None)
         return
-    except (OSError, ValueError, KeyError, TypeError):
+    except (OSError, ValueError, KeyError, TypeError, ImportError, sqlite3.Error):
         logging.getLogger(__name__).warning(
-            "Office disabled: check the private config and packaged action map."
+            "Office disabled: check the private config, action map and daemon state permissions/binding."
         )
         return
     if not hasattr(ctx, "on_unload"):

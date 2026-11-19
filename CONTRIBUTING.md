@@ -64,6 +64,12 @@ count as bugs. When changing the scene:
 - Check that an `error` state does not move the avatar. It changes local lighting only.
 - Add a screenshot to the pull request.
 
+## Versioning and releases
+
+Use SemVer for the application (`package.json`) and independently for the Hermes package (`integrations/hermes/agent-mini-office/plugin.yaml`). Fixes increment patch; backward-compatible features increment minor. Before 1.0, use a minor increment for breaking changes and document the migration. From 1.0 onward, breaking changes require a major increment. The REST path (`/api/v1`) and SQLite migration number are compatibility identifiers, not application versions.
+
+During development use a prerelease such as `0.2.0-dev.0` for the next application version. Record changes under **Unreleased** in `CHANGELOG.md`; rebuild a changed connector ZIP from its manifest and sources. For an approved application release, set the final version, move its changes under a dated changelog heading, verify the artifacts, and tag that commit `vX.Y.Z`. For a separately published Hermes release use `hermes-vX.Y.Z`. Do not invent historical tags or publish a tag merely for a development commit. `/health`, `/api/v1/config`, the startup log and the dashboard footer use the application's package version.
+
 ## Commit scope
 
 Commit working increments. Do not commit `data/`, `.env`, database files, or anything from the local

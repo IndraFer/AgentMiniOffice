@@ -135,6 +135,8 @@ If a visitor is missing, check `/health` first, then the collector terminal. No 
 
 ## Development and reference
 
+The dashboard footer and `/health` report the **application** version. Connector versions are independent; the Hermes version is in the installed `plugin.yaml`. See [versioning and releases](CONTRIBUTING.md#versioning-and-releases) for SemVer and tag conventions.
+
 ```sh
 bun run dev          # watch the collector
 bun run typecheck    # TypeScript checks

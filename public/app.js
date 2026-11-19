@@ -946,7 +946,7 @@ function pageFoot() {
   return h(
     "footer",
     { class: "page-foot" },
-    h("span", {}, "AgentMiniOffice · self-hosted"),
+    h("span", {}, `AgentMiniOffice${dash.version ? ` ${dash.version}` : ""} · self-hosted`),
     sectionButton("Integration Guide", "integrations", "terminal"),
   );
 }
@@ -2179,6 +2179,7 @@ async function loadOffice() {
 
 async function startDashboard() {
   const config = await api("/api/v1/config").catch(() => ({ ok: false, data: null }));
+  dash.version = config.ok && typeof config.data?.version === "string" ? config.data.version : "";
   if (config.ok && config.data?.needs_setup) {
     await renderSetup();
     return;

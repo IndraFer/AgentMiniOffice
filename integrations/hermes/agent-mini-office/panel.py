@@ -38,12 +38,20 @@ def config(path):
         ):
             raise ValueError("private config must belong to the user and be mode 0600")
         data = json.loads(file.read(16385))
-    if not {"panel_url", "token"} <= set(data) or set(data) - {"panel_url", "token", "name", "project"} or not TOKEN.fullmatch(data["token"]):
+    if (
+        not {"panel_url", "token"} <= set(data)
+        or set(data) - {"panel_url", "token", "name", "project", "identity_mode"}
+        or not TOKEN.fullmatch(data["token"])
+    ):
         raise ValueError("expected a panel origin and a join or producer token")
     name = data.get("name", "")
     project = data.get("project", "")
     for label, value in (("name", name), ("project", project)):
-        if not isinstance(value, str) or len(value) > 60 or any(ord(ch) < 32 or ord(ch) == 127 for ch in value):
+        if (
+            not isinstance(value, str)
+            or len(value) > 60
+            or any(ord(ch) < 32 or ord(ch) == 127 for ch in value)
+        ):
             raise ValueError(f"{label} must be printable text up to 60 characters")
     origin = urlsplit(data["panel_url"])
     if (
@@ -60,7 +68,16 @@ def config(path):
         )
     ):
         raise ValueError("expected HTTPS origin or HTTP on loopback")
-    return data["panel_url"].rstrip("/"), data["token"], name.strip(), project.strip()
+    mode = data.get("identity_mode", "session")
+    if mode not in ("daemon", "session"):
+        raise ValueError("identity_mode must be daemon or session")
+    return (
+        data["panel_url"].rstrip("/"),
+        data["token"],
+        name.strip(),
+        project.strip(),
+        mode,
+    )
 
 
 def mappings():
@@ -98,7 +115,8 @@ class Offline(Exception):
 
 
 class Panel:
-    def __init__(self, origin, token, folder, project=""):
+    def __init__(self, origin, token, folder, project="", *, lifecycle="session"):
+        self.lifecycle = lifecycle
         self.origin, self.token, self.folder = origin, token, folder
         self.project = project
         self.producer = (
@@ -154,7 +172,7 @@ class Panel:
             "name": folder,
             "external_session_id": self.session,
             "writer_token": self.writer,
-            "lifecycle": "session",
+            "lifecycle": self.lifecycle,
         }
         if self.project:
             session_body["project"] = self.project

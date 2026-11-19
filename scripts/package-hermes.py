@@ -40,6 +40,7 @@ with ZipFile(root / "public/downloads/agent-mini-office-hermes.zip", "w") as arc
     for name in (
         "__init__.py",
         "panel.py",
+        "daemon.py",
         "visit.py",
         "plugin.yaml",
         "README.md",

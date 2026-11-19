@@ -1,12 +1,14 @@
 # Changelog
 
 All notable changes to this project are documented here. Format follows Keep a Changelog. This
-project uses semantic versioning once it ships; until then everything is `0.x`.
+project and its Hermes connector follow the [versioning policy](CONTRIBUTING.md#versioning-and-releases).
 
 ## [Unreleased]
 
 ### Added
 
+- Hermes plugin 0.2.0 adds opt-in daemon identity for messaging gateways: one telemetry-only avatar per installation survives worker changes and gateway restarts while its visit remains valid. Interactive session mode remains the default.
+- The application version is embedded from the package manifest and displayed in the dashboard footer, including builds launched outside the repository.
 - Added a downloadable Hermes Agent plugin with an editable tool-action schema, observed lifecycle telemetry and Trusted Inbox delivery on supported local gateway sessions. Plugin 0.1.2 accepts optional `name` and `project` labels for daemons without a working folder.
 - Owners can switch on Public View to share a short read-only office URL, or switch it off to disconnect anonymous viewers without restarting the collector. New offices are private.
 - Pi can now pick up a task assigned to its idle visit when the collector grants a Trusted token Inbox access. Visit tasks have 15 minutes for pickup. A claimed task has a separate renewable execution lease; its task-specific completion or failure receipt updates the dashboard without uploading the assistant’s reply. General and ungranted connections remain telemetry-only.

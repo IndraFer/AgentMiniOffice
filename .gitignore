@@ -12,6 +12,8 @@ data/
 *.join-secret
 
 # Secrets
+**/daemon-state/
+integrations/hermes/**/config.json
 .env
 .env.*
 !.env.example
