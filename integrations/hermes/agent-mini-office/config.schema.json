@@ -7,7 +7,7 @@
   "properties": {
     "panel_url": {"type": "string", "format": "uri", "description": "HTTPS origin, or HTTP on loopback for local testing. No credentials, path, query or fragment."},
     "token": {"type": "string", "pattern": "^amo_(join|producer)_[A-Za-z0-9_-]{43}$", "writeOnly": true},
-    "identity_mode": {"enum": ["session", "daemon"], "default": "session", "description": "One visit per interactive session, or one telemetry-only visit per messaging gateway profile."},
+    "identity_mode": {"enum": ["session", "daemon"], "default": "session", "description": "One visit per interactive session, or one persistent visit per messaging gateway profile. Daemon task delivery needs Trusted + Inbox, host permission and gateway-backed ACP."},
     "name": {"type": "string", "maxLength": 60, "description": "Optional stable visit label. Defaults to the working folder basename."},
     "project": {"type": "string", "maxLength": 60, "description": "Optional project label shown in the office."}
   }

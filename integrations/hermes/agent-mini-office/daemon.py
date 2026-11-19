@@ -55,6 +55,8 @@ class Mailbox:
         binding = digest(origin, token)
         with closing(self.open()) as db, db:
             db.executescript("""CREATE TABLE IF NOT EXISTS meta(k TEXT PRIMARY KEY,v TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS inbox_job(id TEXT PRIMARY KEY,run TEXT NOT NULL,phase TEXT NOT NULL,start_event TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS inbox_sent(id TEXT PRIMARY KEY,at REAL NOT NULL);
                 CREATE TABLE IF NOT EXISTS queue(n INTEGER PRIMARY KEY, body TEXT NOT NULL, seq INTEGER);
                 CREATE TABLE IF NOT EXISTS activity(k TEXT PRIMARY KEY,session TEXT NOT NULL,kind TEXT NOT NULL,pid INTEGER NOT NULL);""")
             db.execute("INSERT OR IGNORE INTO meta VALUES('binding',?)", (binding,))
@@ -87,14 +89,32 @@ class Mailbox:
 
     def observe(self, hook, kw, rules):
         # Hash correlation IDs for local bookkeeping. No native identifiers go on the wire.
-        sid = kw.get("session_id")
+        child_hook = hook in ("subagent_start", "subagent_stop")
+        sid = kw.get("parent_session_id") if child_hook else kw.get("session_id")
         if not isinstance(sid, str) or not sid:
             return
         session = digest(sid)
         turn = kw.get("turn_id")
         request = kw.get("request_id")
         with closing(self.open()) as db, db:
-            if hook in ("pre_llm_call", "on_human_input_request"):
+            if child_hook:
+                child = kw.get("child_session_id")
+                if not isinstance(child, str) or not child:
+                    return
+                key = digest(sid, "child", child)
+                if hook == "subagent_start":
+                    db.execute(
+                        "INSERT OR IGNORE INTO activity SELECT ?,?,'child',? WHERE (SELECT count(*) FROM activity)<512",
+                        (key, session, os.getpid()),
+                    )
+                elif kw.get("child_status") in (
+                    "completed",
+                    "failed",
+                    "interrupted",
+                    "error",
+                ):
+                    db.execute("DELETE FROM activity WHERE k=?", (key,))
+            elif hook in ("pre_llm_call", "on_human_input_request"):
                 wait = hook == "on_human_input_request"
                 identifier = request if wait else turn
                 if not identifier:
@@ -189,8 +209,8 @@ class Mailbox:
 
 
 class GatewayWriter:
-    def __init__(self, box, panel):
-        self.box, self.panel = box, panel
+    def __init__(self, box, panel, inbox=None):
+        self.box, self.panel, self.inbox = box, panel, inbox
         self.stopped = threading.Event()
         self.lock = threading.Lock()
         self.thread = None
@@ -293,6 +313,10 @@ class GatewayWriter:
                                     "DELETE FROM queue WHERE n=?", [(i,) for i in ids]
                                 )
                         state = self.box.presence(db)
+                        if self.inbox:
+                            self.inbox.service(db, self.panel, state == "idle")
+                            if state == "idle" and self.inbox.turn:
+                                state = "working"
                         if time.monotonic() >= heartbeat or state != last_state:
                             self.panel.heartbeat(state)
                             last_state = state
@@ -309,6 +333,8 @@ class GatewayWriter:
                 type(error).__name__,
             )
         finally:
+            if self.inbox:
+                self.inbox.stop()
             os.close(fd)
 
     def close(self):
@@ -318,12 +344,13 @@ class GatewayWriter:
 
 
 class DaemonConnector:
-    def __init__(self, home, origin, token, name, project, rules):
+    def __init__(self, home, origin, token, name, project, rules, inbox=None):
         self.box = Mailbox(home, origin, token)
         self.rules = rules
         self.writer = GatewayWriter(
             self.box,
             Panel(origin, token, name or "Hermes", project, lifecycle="daemon"),
+            inbox,
         )
 
     def handle(self, hook, kw):

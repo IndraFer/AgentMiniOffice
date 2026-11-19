@@ -44,6 +44,7 @@ for await (const line of createInterface({input:process.stdin})) {
     : op==='deniedRotations' ? deniedRotations
     : op==='beats' ? Object.fromEntries(beats)
     : op==='polls' ? polls
+    : op==='claims' ? office.db.prepare('SELECT claim_count FROM tasks WHERE id=?').get<{claim_count:number}>(id)?.claim_count
     : op==='acks' ? ackRequests
     : op==='status' ? office.db.prepare('SELECT status FROM tasks WHERE id=?').get<{status:string}>(id)?.status
     : office.db.prepare('SELECT type,data FROM events').all();

@@ -185,9 +185,19 @@ def register(ctx):
         origin, token, name, project, mode = config(home / "config.json")
         if mode == "daemon":
             from .daemon import DaemonConnector
+            from .daemon_inbox import for_profile
 
             connector = bind(
-                ctx, DaemonConnector(home, origin, token, name, project, mappings())
+                ctx,
+                DaemonConnector(
+                    home,
+                    origin,
+                    token,
+                    name,
+                    project,
+                    mappings(),
+                    for_profile(ctx, home),
+                ),
             )
         else:
             connector = install(ctx, origin, token, name=name, project=project)

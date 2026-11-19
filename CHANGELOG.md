@@ -7,6 +7,7 @@ project and its Hermes connector follow the [versioning policy](CONTRIBUTING.md#
 
 ### Added
 
+- Hermes plugin 0.3.0 adds Trusted Inbox pickup for daemon avatars with host consent and gateway-backed ACP. Each task gets a private session, never a Telegram route. A durable dispatch marker prevents automatic resubmission after restart.
 - Hermes plugin 0.2.0 adds opt-in daemon identity for messaging gateways: one telemetry-only avatar per installation survives worker changes and gateway restarts while its visit remains valid. Interactive session mode remains the default.
 - The application version is embedded from the package manifest and displayed in the dashboard footer, including builds launched outside the repository.
 - Added a downloadable Hermes Agent plugin with an editable tool-action schema, observed lifecycle telemetry and Trusted Inbox delivery on supported local gateway sessions. Plugin 0.1.2 accepts optional `name` and `project` labels for daemons without a working folder.
