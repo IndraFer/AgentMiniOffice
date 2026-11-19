@@ -11,6 +11,7 @@ from pathlib import Path
 
 from .panel import ID, Denied, expires, uid
 from .private_turn import PrivateTurn
+from .task_receipt import instructions
 
 
 def adapter_command():
@@ -113,14 +114,31 @@ class DaemonInbox:
             if phase == "sent" and (not self.turn or self.turn.done.is_set()):
                 # A process restart cannot prove completion and must never re-submit a prompt.
                 phase = "ack" if self.turn and self.turn.ok else "fail"
+                detail = (
+                    self.turn.note
+                    if self.turn
+                    else "The daemon could not verify completion after losing the task turn."
+                )
                 with db:
+                    # Keep the exact finish payload across a lost HTTP reply and a writer restart.
+                    db.execute(
+                        "INSERT OR REPLACE INTO meta VALUES('inbox_result',?)",
+                        (detail,),
+                    )
                     db.execute("UPDATE inbox_job SET phase=?", (phase,))
                 self.stop()
             if phase in ("ack", "fail"):
+                saved = db.execute(
+                    "SELECT v FROM meta WHERE k='inbox_result'"
+                ).fetchone()
+                detail = saved[0] if saved else ""
                 note = (
-                    {"result": "Hermes reported completion for this task."}
+                    {"result": detail or "Hermes reported completion for this task."}
                     if phase == "ack"
-                    else {"reason": "Hermes did not confirm completion for this task."}
+                    else {
+                        "reason": detail
+                        or "Hermes did not confirm completion for this task."
+                    }
                 )
                 try:
                     p.inbox(path + "/" + phase, owner | note)
@@ -150,7 +168,7 @@ class DaemonInbox:
                 return
             prompt = (
                 f"[AgentMiniOffice panel task {tid}]\n{item['title']}\n{item.get('brief') or ''}\n\n"
-                f"Follow normal Hermes approval rules. Only after completing this task, end your final answer with this line alone:\nPANEL-TASK-DONE {tid}"
+                + instructions(tid)
             )
             workspace = self.home / "task-workspace"
             workspace.mkdir(mode=0o700, exist_ok=True)
@@ -177,6 +195,7 @@ class DaemonInbox:
         with db:
             self.event(db, "run.finished" if ok else "run.failed", run)
             db.execute("DELETE FROM inbox_job")
+            db.execute("DELETE FROM meta WHERE k='inbox_result'")
 
     def service(self, db, p, idle):
         if self.disabled:

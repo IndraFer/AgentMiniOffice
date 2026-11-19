@@ -230,7 +230,7 @@ class Workflow(unittest.TestCase):
             "post_llm_call",
             turn_id="bound",
             user_message=prompt,
-            assistant_response="NEVER-SEND\nPANEL-TASK-DONE " + task,
+            assistant_response="NEVER-SEND\nPANEL-TASK-SUMMARY: Updated the fixture.\nPANEL-TASK-DONE " + task,
         )
         call(
             "on_session_end",
@@ -242,6 +242,7 @@ class Workflow(unittest.TestCase):
         )
         until(lambda: db({"op": "status", "id": task}) == "acked")
         until(lambda: db({"op": "acks"}) == 2)
+        self.assertEqual(db({'op':'result','id':task}), 'Updated the fixture.')
         second = db({"op": "task", "agent": agent})
         until(lambda: len(h.prompts) == 2)
         call("pre_llm_call", turn_id="interrupt", user_message="unrelated")

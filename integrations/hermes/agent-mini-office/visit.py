@@ -7,6 +7,7 @@ from collections import deque
 from dataclasses import dataclass
 
 from .panel import ID, Denied, Offline, expires, uid
+from .task_receipt import instructions, receipt
 
 
 @dataclass
@@ -17,7 +18,8 @@ class Task:
     started: bool = False  # run.started was accepted by the collector
     sent: bool = False
     turn: str = ""
-    receipt: bool = False
+    receipt: str = ""
+    note: str = ""
     outcome: str = ""
     renew: float = 0
     start_by: float = 0
@@ -70,7 +72,10 @@ class Visit:
                 self.turns[turn] = task.run
             else:
                 if task and not task.outcome:
-                    task.outcome = "fail"
+                    task.outcome, task.note = (
+                        "fail",
+                        "Another turn interrupted task delivery.",
+                    )
                 run = self.turns[turn] = uid()
                 self.event("run.started", {"title": "Hermes turn"}, run)
         elif hook in ("pre_tool_call", "post_tool_call"):
@@ -91,11 +96,12 @@ class Visit:
             answer = kw.get("assistant_response")
             if isinstance(answer, str) and answer.strip():
                 self.event("note", {"action": "final_response"}, self.turns[turn])
-                if task and task.turn == turn and kw.get("user_message") == task.prompt:
-                    task.receipt = (
-                        answer.rstrip().rsplit("\n", 1)[-1]
-                        == "PANEL-TASK-DONE " + task.id
-                    )
+            if task and not task.outcome and task.turn == turn:
+                task.receipt, task.note = (
+                    receipt(answer, task.id)
+                    if isinstance(answer, str) and kw.get("user_message") == task.prompt
+                    else ("", "")
+                )
         elif (
             hook == "on_session_end"
             and turn in self.turns
@@ -115,9 +121,14 @@ class Visit:
                     "text_response(finish_reason=stop)",
                     "text_response(finish_reason=end_turn)",
                 )
-                task.outcome = task.outcome or (
-                    "ack" if ok and normal_stop and task.receipt else "fail"
-                )
+                if not task.outcome:
+                    task.outcome = (
+                        task.receipt if ok and normal_stop and task.receipt else "fail"
+                    )
+                    if not ok or not normal_stop:
+                        task.note = "Hermes stopped before confirming the task."
+                    elif not task.receipt:
+                        task.note = "The turn ended without a matching task receipt."
                 self.wake.set()
             else:
                 self.event("run.finished" if ok else "run.failed", run=run)
@@ -189,8 +200,7 @@ class Visit:
                     continue
                 prompt = (
                     f"[AgentMiniOffice panel task {tid}; delivery {uid()}]\n{item['title']}\n{item.get('brief') or ''}\n\n"
-                    "Follow normal Hermes approval rules. Only after completing this task, "
-                    f"end your final answer with this line alone:\nPANEL-TASK-DONE {tid}"
+                    + instructions(tid)
                 )
                 self.task = Task(tid, prompt, uid())
                 self.event("run.started", {"title": "Panel task"}, self.task.run)
@@ -206,14 +216,20 @@ class Visit:
         now = time.monotonic()
         try:
             with self.lock:
-                if t.sent and not t.turn and now >= t.start_by:
-                    t.outcome = "fail"
+                if not t.outcome and t.sent and not t.turn and now >= t.start_by:
+                    t.outcome, t.note = (
+                        "fail",
+                        "Hermes did not start the assigned turn in time.",
+                    )
                 outcome = t.outcome
             if outcome:
                 result = (
-                    {"result": "Hermes reported completion for this task."}
+                    {"result": t.note or "Hermes reported completion for this task."}
                     if outcome == "ack"
-                    else {"reason": "Hermes did not confirm completion for this task."}
+                    else {
+                        "reason": t.note
+                        or "Hermes did not confirm completion for this task."
+                    }
                 )
                 self.panel.inbox(path + "/" + outcome, owner | result)
                 self.settle(t, outcome == "ack")
@@ -243,7 +259,10 @@ class Visit:
                         except Exception:
                             accepted = False
                         if accepted is not True:
-                            t.outcome = "fail"
+                            t.outcome, t.note = (
+                                "fail",
+                                "Hermes did not confirm acceptance of the task turn.",
+                            )
         except Denied as error:
             if error.code not in (404, 409):
                 raise

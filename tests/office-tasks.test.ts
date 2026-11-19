@@ -95,6 +95,22 @@ describe("office tasks", () => {
     expect(body.tasks[0]?.priority).toBe(2);
   });
 
+  test('member board filters by finish time, not creation, and keeps private details off snapshots', async()=>{
+    const {office,first,board,addTask}=await setup();
+    for(const title of ['open','recent','old','failed']) await addTask(first,title);
+    const past=new Date(Date.now()-73*3600000).toISOString(),now=new Date().toISOString();
+    office.db.prepare('UPDATE tasks SET brief=?,created_at=?').run('private context',past);
+    const mark=office.db.prepare('UPDATE tasks SET status=?,result=?,updated_at=? WHERE title=?');
+    mark.run('acked','private outcome',now,'recent');mark.run('acked','old result',past,'old');
+    mark.run('failed','private reason',new Date(Date.now()-3600000).toISOString(),'failed');
+    const rows=(await board()).tasks;expect(rows.map(t=>t.title)).toEqual(['open','recent','failed']);
+    expect(rows[0]).toMatchObject({finished_at:null,result:null,brief:'private context'});
+    expect(rows[1]).toMatchObject({finished_at:now,result:'private outcome'});
+    expect(rows[2]).toMatchObject({result:'private reason'});
+    expect(office.db.prepare('SELECT count(*) AS n FROM tasks').get()).toEqual({n:4});
+    expect(await (await office.snapshot()).text()).not.toContain('private ');
+  });
+
   test("refuses a sixth pending task for one agent", async () => {
     const { addTask, first } = await setup();
     for (let index = 0; index < 5; index++) {

@@ -60,12 +60,16 @@ test.each([false,true])('panel task delivery follows the token inbox grant (%s)'
       await hooks.agent_end({messages:[{role:'assistant',stopReason:'stop',content:[{type:'text',text:reply}]}]},ctx);
       idle=true;await hooks.agent_settled({aborted},ctx);return state(task).status;
     };
-    expect(await finish(id,prompts[0],`PRIVATE_REPLY\nPANEL-TASK-DONE ${id}`,false)).toBe('acked');
+    expect(await finish(id,prompts[0],`PRIVATE_REPLY\nPANEL-TASK-SUMMARY: Updated the fixture.\nPANEL-TASK-DONE ${id}`,false)).toBe('acked');
+    expect(state(id).result).toBe('Updated the fixture.');
+    const blocked=add();await hooks.session_info_changed({name:'Test'},ctx);
+    expect(await finish(blocked,prompts.at(-1),`PRIVATE_REPLY\nPANEL-TASK-REASON: Missing required input.\nPANEL-TASK-FAILED ${blocked}`,false)).toBe('failed');
+    expect(state(blocked).result).toBe('Agent reported: Missing required input.');
     for(const [reply,aborted,foreign] of [['ordinary reply',false,false],['',true,false],['',false,true]]){
       const next=add();await hooks.session_info_changed({name:'Test'},ctx);
       expect(await finish(next,foreign?'unrelated prompt':prompts.at(-1),reply || `PANEL-TASK-DONE ${next}`,aborted)).toBe('failed');
     }
-    expect(prompts).toHaveLength(4);expect(JSON.stringify(office.db.prepare('SELECT data FROM events').all())).not.toContain('PRIVATE_');
+    expect(prompts).toHaveLength(5);expect(JSON.stringify(office.db.prepare('SELECT data FROM events').all())).not.toContain('PRIVATE_');
     expect(JSON.stringify(state(id))).not.toContain('PRIVATE_REPLY');
   }finally{await hooks.session_shutdown?.({},ctx);server.stop(true);office.db.close();await rm(root,{recursive:true,force:true});}
 });

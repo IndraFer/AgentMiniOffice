@@ -43,6 +43,7 @@ with ZipFile(root / "public/downloads/agent-mini-office-hermes.zip", "w") as arc
         "daemon.py",
         "daemon_inbox.py",
         "private_turn.py",
+        "task_receipt.py",
         "visit.py",
         "plugin.yaml",
         "README.md",

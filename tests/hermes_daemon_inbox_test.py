@@ -72,7 +72,7 @@ def fake_acp():
                         "sessionUpdate": "agent_message_chunk",
                         "content": {
                             "type": "text",
-                            "text": "PRIVATE-ANSWER\n" + marker,
+                            "text": "PRIVATE-ANSWER\nPANEL-TASK-SUMMARY: Verified the fixture.\n" + marker,
                         },
                     },
                 },
@@ -186,6 +186,7 @@ class DaemonInbox(unittest.TestCase):
             until(lambda: db("status", id=t) == "acked")
             until(lambda: db("acks") == 2)
             self.assertGreaterEqual(db("claims", id=t), 2)
+            self.assertEqual(db('result', id=t), 'Verified the fixture.')
             # A foreign session's marker cannot complete our task.
             (home / "behavior").write_text("foreign")
             bad = db("task", agent=agent)
@@ -194,6 +195,7 @@ class DaemonInbox(unittest.TestCase):
             denied = db("task", agent=agent)
             until(lambda: db("status", id=denied) == "failed")
             self.assertTrue((home / "denied").is_file())
+            self.assertIn('permission', db('result', id=denied))
             (home / "behavior").write_text("hang")
             lost = db("task", agent=agent)
             sent = home / "submissions"
@@ -202,6 +204,7 @@ class DaemonInbox(unittest.TestCase):
             time.sleep(2.1)  # simulate restart after the last granted lease has expired
             p = start(True)
             until(lambda: db("status", id=lost) == "failed")
+            self.assertIn('could not verify', db('result',id=lost))
             self.assertEqual(len(sent.read_text().splitlines()), 4)
             self.assertEqual(db("agent"), agent)
             stop(p)

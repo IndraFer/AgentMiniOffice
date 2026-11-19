@@ -494,6 +494,7 @@ Rules that prevent double work:
 - A `claimed` task whose lease expires returns to `pending` and the server records `task.expired`. A 60
   second lease means long work must renew. That is intentional, so a dead agent cannot hold a task
   hostage.
+- The authenticated member board (`GET /api/v1/offices/:slug/tasks`) includes the task `brief`, `created_at`, and, only for terminal tasks, `result` and `finished_at` (null otherwise). It lists `acked` and `failed` tasks finished in the last 72 hours, newest finishes first; the time filter does not apply to active tasks or delete history. Public/share snapshots do not include briefs or results.
 - `ack` and `fail` require the unexpired lease and its owning `run_id`. After a terminal receipt is committed, only a retry with the same run, outcome and result returns the recorded task; a conflicting receipt returns `409`.
 
 ### 10.2 When an agent polls

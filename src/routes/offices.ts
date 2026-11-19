@@ -190,6 +190,7 @@ export function officesRoutes({ db, demo, store, live }: OfficesContext): Hono {
     const guard = requireOffice(c, db, c.req.param("slug"), false);
     if ("response" in guard) return guard.response;
 
+    c.header('Cache-Control', 'private, no-store');
     const rows = listOfficeTasks(db, guard.office.id);
     return c.json({
       tasks: rows.map((task) => ({
@@ -205,6 +206,8 @@ export function officesRoutes({ db, demo, store, live }: OfficesContext): Hono {
         lease_expires_at: task.lease_expires_at,
         claim_count: Number(task.claim_count),
         created_at: task.created_at,
+        finished_at: ['acked','failed'].includes(task.status) ? task.updated_at : null,
+        result: ['acked','failed'].includes(task.status) ? task.result : null,
       })),
     });
   });

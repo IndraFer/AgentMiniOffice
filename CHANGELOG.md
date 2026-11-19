@@ -7,6 +7,7 @@ project and its Hermes connector follow the [versioning policy](CONTRIBUTING.md#
 
 ### Added
 
+- Member task cards show briefs, created/finished times and reported outcomes. Done shows the last 72 hours without deleting history. Updated Pi downloads and Hermes 0.4.0 return a marked one-line summary or reason from the task turn without a second model call.
 - The office and integration guide now include favicons and social previews using a compact image of the demo office, with the office name and canonical slug URL for public offices. Private offices use a generic preview; share tokens never appear in the metadata.
 - Hermes plugin 0.3.0 adds Trusted Inbox pickup for daemon avatars with host consent and gateway-backed ACP. Each task gets a private session, never a Telegram route. A durable dispatch marker prevents automatic resubmission after restart.
 - Hermes plugin 0.2.0 adds opt-in daemon identity for messaging gateways: one telemetry-only avatar per installation survives worker changes and gateway restarts while its visit remains valid. Interactive session mode remains the default.

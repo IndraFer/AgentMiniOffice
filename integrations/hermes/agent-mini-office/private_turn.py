@@ -7,6 +7,8 @@ import os
 import threading
 import time
 
+from .task_receipt import receipt
+
 
 class PrivateTurn:
     def __init__(self, command, profile, workspace, task, prompt, deadline):
@@ -15,6 +17,7 @@ class PrivateTurn:
         self.cancel = threading.Event()
         self.done = threading.Event()
         self.ok = False
+        self.note = ""
         self.thread = threading.Thread(
             target=self._run, args=(task, prompt), daemon=True
         )
@@ -48,7 +51,6 @@ class PrivateTurn:
         assert p.stdin and p.stdout
         writer, reader = p.stdin, p.stdout
         sid = None
-        marker = "PANEL-TASK-DONE " + task
         tail = ""
         denied = False
 
@@ -75,6 +77,7 @@ class PrivateTurn:
                     return msg["result"]
                 if "id" in msg:
                     if msg["method"] == "session/request_permission":
+                        self.note = "Hermes requested interactive permission; the daemon did not grant it."
                         denied = True
                         options = msg.get("params", {}).get("options", [])
                         reject = next(
@@ -118,8 +121,10 @@ class PrivateTurn:
                 if update.get("sessionUpdate") == "agent_message_chunk":
                     content = update.get("content", {})
                     if content.get("type") == "text":
-                        # Only keep enough text to recognize an exact final line, including its boundary.
-                        tail = (tail + content["text"])[-(len(marker) + 16) :]
+                        # Keep only a bounded suffix; a cut inside a line is not a valid prefix.
+                        tail += content["text"]
+                        if len(tail) > 1024:
+                            tail = "…" + tail[-1023:]
 
         async def turn():
             nonlocal sid
@@ -144,11 +149,13 @@ class PrivateTurn:
                 "session/prompt",
                 {"sessionId": sid, "prompt": [{"type": "text", "text": prompt}]},
             )
-            return (
-                not denied
-                and result.get("stopReason") == "end_turn"
-                and tail.rstrip("\r\n").split("\n")[-1] == marker
-            )
+            if denied or result.get("stopReason") != "end_turn":
+                self.note = self.note or "The private turn did not end normally."
+                return False
+            status, self.note = receipt(tail, task)
+            if not status:
+                self.note = "The private turn ended without a matching task receipt."
+            return status == "ack"
 
         job = asyncio.create_task(turn())
         try:

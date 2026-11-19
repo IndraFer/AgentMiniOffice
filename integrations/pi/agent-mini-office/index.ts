@@ -273,7 +273,7 @@ export default function agentMiniOffice(pi: ExtensionAPI) {
   let settingsKey = '', guestProducer = '', enrolled = false, waiting = false;
   let compacting = false, inboxGranted = false;
   // Private, visit-bound state. A transport retry must not submit the user message again.
-  type PanelTask = {id:string; run:string; prompt:string; phase:'claim'|'sent'|'running'; renewAt:number; startBy:number; receipt:boolean; outcome?:'ack'|'fail'};
+  type PanelTask = {id:string; run:string; prompt:string; phase:'claim'|'sent'|'running'; renewAt:number; startBy:number; receipt?:'ack'|'fail'; note?:string; outcome?:'ack'|'fail'};
   let panelTask: PanelTask | undefined;
   const delivered = new Map<string,number>(); // Guard an expired/requeued delivery for the pickup window.
   let renewal: ReturnType<typeof setTimeout> | undefined;
@@ -454,12 +454,12 @@ export default function agentMiniOffice(pi: ExtensionAPI) {
       const {tasks}=await request(base,proof.writer);
       const item=Array.isArray(tasks) && tasks.find(v=>object(v) && typeof v.id==='string' && !delivered.has(v.id));
       if(!item || typeof item.id!=='string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(item.id) || typeof item.title!=='string' || !available(ctx)) return;
-      const prompt=`[AgentMiniOffice panel task ${item.id}]\n${item.title}\n${typeof item.brief==='string'?item.brief:''}\n\nFollow normal Pi approval rules. Only if this task was completed, put this receipt alone on the last line of your final answer:\nPANEL-TASK-DONE ${item.id}`;
-      t=panelTask={id:item.id,run:eventId(),prompt,phase:'claim',renewAt:0,startBy:0,receipt:false};
+      const prompt=`[AgentMiniOffice panel task ${item.id}]\n${item.title}\n${typeof item.brief==='string'?item.brief:''}\n\nFollow normal Pi approval rules. For office members give one line (up to 400 characters; no secrets, paths, conversation excerpts or tool logs). If blocked, end with PANEL-TASK-REASON: <reason> followed by PANEL-TASK-FAILED ${item.id} on its own line. Only if completed, end with PANEL-TASK-SUMMARY: <summary> followed by this exact final line:\nPANEL-TASK-DONE ${item.id}`;
+      t=panelTask={id:item.id,run:eventId(),prompt,phase:'claim',renewAt:0,startBy:0};
       await runEvent(t.run,'run.started');
     }
     const url=`${base}/${t.id}`, owner={run_id:t.run};
-    if(t.phase==='sent' && Date.now()>=t.startBy) t.outcome='fail';
+    if(!t.outcome && t.phase==='sent' && Date.now()>=t.startBy) {t.outcome='fail';t.note='Pi did not start the assigned turn in time.';}
     try {
       if(!t.outcome && Date.now()>=t.renewAt){
         const lease=await request(`${url}/claim`,proof.writer,owner);
@@ -473,12 +473,12 @@ export default function agentMiniOffice(pi: ExtensionAPI) {
           if(available(ctx)){
             t.phase='sent';t.startBy=Date.now()+30_000;
             delivered.set(t.id,Date.now()+15*60_000);
-            try {pi.sendUserMessage(t.prompt,{expandPromptTemplates:false});} catch {t.outcome='fail';}
-          }else t.outcome='fail'; // The session became busy between listing and claiming.
+            try {pi.sendUserMessage(t.prompt,{expandPromptTemplates:false});} catch {t.outcome='fail';t.note='Pi did not confirm acceptance of the task turn.';}
+          }else {t.outcome='fail';t.note='The session was no longer available for task delivery.';} // The session became busy between listing and claiming.
         }
       }
       if(!t.outcome) return;
-      const body=t.outcome==='ack'?{result:'Pi reported completion for this task.'}:{reason:'Pi did not confirm completion for this task.'};
+      const body=t.outcome==='ack'?{result:t.note || 'Pi reported completion for this task.'}:{reason:t.note || 'Pi did not confirm completion for this task.'};
       await request(`${url}/${t.outcome}`,proof.writer,{...owner,...body});
     } catch(e){
       if(!(e instanceof HttpError) || (e.status!==404 && e.status!==409)) throw e;
@@ -686,23 +686,33 @@ export default function agentMiniOffice(pi: ExtensionAPI) {
     const t=panelTask;
     if(!t || t.phase==='claim' || t.outcome) return;
     if(t.phase==='sent' && e.messageType==='user' && e.prompt===t.prompt){t.phase='running';t.prompt='';}
-    else t.outcome='fail'; // Unrelated user/custom prompt must not supply a receipt.
+    else {t.outcome='fail';t.note='Another turn interrupted task delivery.';}
   });
-  pi.on('input', ()=>{if(panelTask?.phase==='running') panelTask.outcome='fail';});
+  pi.on('input', ()=>{if(panelTask?.phase==='running' && !panelTask.outcome) {panelTask.outcome='fail';panelTask.note='New input interrupted the assigned turn.';}});
   pi.on('agent_end', e => {
     // A loop can end before retry or continuation. Keep only metadata until final settlement.
     const last = e.messages.at(-1);
     finalText = last?.role === 'assistant' && last.stopReason === 'stop' &&
       last.content.some(block => block.type === 'text');
     const t=panelTask;
-    if(t?.phase==='running'){
+    if(t?.phase==='running' && !t.outcome){
       const tail=last?.role==='assistant' && last.stopReason==='stop' ? last.content.filter(b=>b.type==='text').at(-1) : undefined;
-      t.receipt=tail?.text.trimEnd().split('\n').at(-1)===`PANEL-TASK-DONE ${t.id}`;
+      const lines=tail?.text.trimEnd().split(/\r?\n/);
+      const lastLine=lines?.at(-1);
+      t.receipt=lastLine===`PANEL-TASK-DONE ${t.id}` ? 'ack' : lastLine===`PANEL-TASK-FAILED ${t.id}` ? 'fail' : undefined;
+      const prefix=t.receipt==='ack' ? 'PANEL-TASK-SUMMARY: ' : 'PANEL-TASK-REASON: ';
+      const line=lines?.at(-2) ?? '';
+      const note=t.receipt && line.startsWith(prefix) ? line.slice(prefix.length).trim() : '';
+      const safe=note && [...note].length<=400 && !/[\p{C}\p{Zl}\p{Zp}]/u.test(note) ? note : '';
+      t.note=t.receipt==='fail' ? (safe ? `Agent reported: ${safe}` : 'The agent reported that it could not complete this task.') : safe;
     }
   });
   pi.on("agent_settled", async (e, ctx) => {
     idle = ctx.isIdle();
-    if(panelTask?.phase==='running') panelTask.outcome ??= !e.aborted && panelTask.receipt ? 'ack' : 'fail';
+    if(panelTask?.phase==='running' && !panelTask.outcome) {
+      panelTask.outcome=!e.aborted && panelTask.receipt || 'fail';
+      if(e.aborted || !panelTask.receipt) panelTask.note=e.aborted ? 'The assigned turn was aborted.' : 'The turn ended without a matching task receipt.';
+    }
     const completed = idle && !e.aborted && finalText;
     finalText = false;
     if (completed) await report(ctx, {type:'note', data:{kind:'final-response',action:'final_response'}});

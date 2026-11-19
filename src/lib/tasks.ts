@@ -83,22 +83,24 @@ interface OfficeTaskRow extends TaskRow {
   agent_simulator: number;
 }
 
-/** Office wide list for the board. Ordered by status then age. */
+/** Rolling display window, not a deletion policy. Active work never ages out of this filter. */
 export function listOfficeTasks(db: Db, orgId: string, limit = 200): OfficeTaskRow[] {
   return db
     .prepare(
       `SELECT t.*, coalesce(v.name,a.name) AS agent_name, a.simulator AS agent_simulator
          FROM tasks t JOIN agents a ON a.id = t.agent_id LEFT JOIN visit_labels v ON v.agent_id=a.id
-        WHERE t.org_id = ? AND t.status != 'cancelled'
+        WHERE t.org_id = ? AND (t.status IN ('pending','claimed') OR
+              (t.status IN ('acked','failed') AND t.updated_at >= ?))
         ORDER BY CASE t.status
                    WHEN 'claimed' THEN 0
                    WHEN 'pending' THEN 1
                    ELSE 2
                  END,
-                 t.priority DESC, t.created_at ASC
+                 CASE WHEN t.status IN ('acked','failed') THEN t.updated_at END DESC,
+                 t.priority DESC, t.created_at ASC, t.id
         LIMIT ?`,
     )
-    .all<OfficeTaskRow>(orgId, limit);
+    .all<OfficeTaskRow>(orgId, new Date(Date.now() - 72 * 3600_000).toISOString(), limit);
 }
 
 export function cancelTask(db: Db, orgId: string, taskId: string, now = Date.now()): TaskResult {

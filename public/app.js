@@ -1931,10 +1931,23 @@ function stopTasksPoll() {
 const KANBAN_COLUMNS = [
   { key: "pending", label: "Todo", tone: "tone-caution" },
   { key: "claimed", label: "Doing", tone: "tone-sage" },
-  { key: "done", label: "Done", tone: "tone-ocean" },
+  { key: "done", label: "Done · Last 72 hours", tone: "tone-ocean" },
 ];
 
-function kanbanCard(task, onCancel) {
+const taskDate = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+function taskTime(label, iso) {
+  return iso ? h('span', {}, `${label} `, h('time', { datetime: iso, title: new Date(iso).toLocaleString() }, taskDate.format(new Date(iso)))) : null;
+}
+
+function taskText(label, text, key, expanded) {
+  if (!text) return null;
+  if (text.length <= 110 && !text.includes('\n')) return h('p', {class:'task-copy'}, h('strong',{},`${label}: `),text);
+  return h('details', {class:'task-detail', 'data-detail':key, open: expanded.has(key)},
+    h('summary',{},label, h('span',{class:'task-preview'},text)),
+    h('p',{class:'task-copy'},text));
+}
+
+function kanbanCard(task, onCancel, expanded) {
   const tone =
     task.status === "failed"
       ? "tone-clay"
@@ -1958,6 +1971,10 @@ function kanbanCard(task, onCancel) {
       task.status === "failed" ? h("span", { class: "status status-failed" }, "Failed") : null,
       task.status === "acked" ? h("span", { class: "status status-acked" }, "Acked") : null,
     ),
+    taskText('Brief',task.brief,`${task.id}-brief`,expanded),
+    task.finished_at ? taskText(task.status==='failed' ? 'Reason' : 'Result', task.result || 'No details reported.', `${task.id}-outcome`,expanded) : null,
+    h('div',{class:'task-times tiny muted'},taskTime('Created',task.created_at),
+      taskTime(task.status==='failed' ? 'Failed' : 'Completed',task.finished_at)),
     task.status === "pending" && canOperateOffice()
       ? h(
           "span",
@@ -1993,7 +2010,14 @@ function tasksPage() {
   const board = h("div", { class: "kanban" });
   const status = h("span", { class: "tiny muted" }, "Loading tasks…");
 
+  let lastPayload;
   const draw = (tasks) => {
+    const payload=JSON.stringify(tasks);
+    status.textContent = `${tasks.length} task${tasks.length === 1 ? "" : "s"} · refreshed ${clock(new Date().toISOString())}`;
+    if (payload===lastPayload && !tasks.some(task=>task.status==='claimed')) return;
+    lastPayload=payload;
+    const expanded=new Set([...board.querySelectorAll('details[open]')].map(el=>el.dataset.detail));
+    const focused=document.activeElement?.closest('details')?.dataset.detail;
     const groups = {
       pending: tasks.filter((task) => task.status === "pending"),
       claimed: tasks.filter((task) => task.status === "claimed"),
@@ -2015,14 +2039,14 @@ function tasksPage() {
             ? h(
                 "ul",
                 { class: "kanban-list" },
-                ...groups[column.key].map((task) => kanbanCard(task, cancel)),
+                ...groups[column.key].map((task) => kanbanCard(task, cancel, expanded)),
               )
             : h("p", { class: "tiny muted" }, "Nothing here."),
         ),
       ),
     );
 
-    status.textContent = `${tasks.length} task${tasks.length === 1 ? "" : "s"} · refreshed ${clock(new Date().toISOString())}`;
+    if (focused) board.querySelector(`[data-detail="${CSS.escape(focused)}"] summary`)?.focus({preventScroll:true});
   };
 
   const load = async () => {
@@ -2120,9 +2144,8 @@ function tasksPage() {
         "section",
         { class: "card" },
         cardHead("Board", "Todo, Doing, and finished work.", "inbox", "tone-ocean"),
-        agents.length
-          ? board
-          : h(
+        board,
+        !agents.length && h(
               "div",
               { class: "empty" },
               icon("users", 20),
