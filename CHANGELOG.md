@@ -5,6 +5,10 @@ project and its Hermes connector follow the [versioning policy](CONTRIBUTING.md#
 
 ## [Unreleased]
 
+### Fixed
+
+- Moved the coffee machine and its standing spot slightly farther from the sofa. Avatars can still reach the machine but can no longer squeeze between the planter and the sofa and get stuck passing each other there.
+
 ## [0.2.1] - 2026-11-20
 
 ### Added

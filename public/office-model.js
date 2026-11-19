@@ -71,8 +71,8 @@ export function createLayout() {
   slot("lounge-a", "pantry", 15.6, 9.55, 0, "seated", "sofa");
   slot("lounge-b", "pantry", 17.6, 9.55, 0, "seated", "sofa");
   add("coffee-table", "coffee-table", 16.6, 11.8, 2.0, 0.8);
-  add("coffee", "coffee", 19, 8, 1.1, 1.7);
-  slot("coffee", "pantry", 17.8, 8, Math.PI / 2, "standing", "coffee");
+  const coffee = add("coffee", "coffee", 19, 7.75, 1.1, 1.7);
+  slot("coffee", "pantry", coffee.x - 1.2, coffee.z, Math.PI / 2, "standing", coffee.id);
   add("water", "water", 19, 11.9, 0.65, 0.65);
   slot("water", "pantry", 17.95, 11.9, Math.PI / 2, "standing", "water");
   add("aquarium", "aquarium", 14.1, 12.9, 1.7, 0.65);
@@ -88,7 +88,7 @@ export function createLayout() {
   slot("archive-east", "library", 8.85, 1.65, Math.PI, "standing", "archive-east");
   slots.at(-1).alsoServes = "print-room";
   // Keep the existing watering station ID; approach from the front, outside the coffee aisle.
-  const loungePlant = add("plant-14-8", "plant", 13.65, 9.3, 0.65, 0.65);
+  const loungePlant = add("plant-14-8", "plant", 13.9, 9.3, 0.65, 0.65);
   slot("ambient-plant", "plant", loungePlant.x, loungePlant.z + 0.9, Math.PI, "standing", loungePlant.id);
   add("whiteboard", "whiteboard", 3.2, 0.9, 3.2, 0.1, {
     clearance: { x: 3.2, z: 0.9, w: 3.2, d: 0.5 },
