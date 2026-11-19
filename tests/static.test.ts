@@ -16,6 +16,25 @@ describe("static files", () => {
     expect(res.headers.get("cache-control")).toBe("no-store");
   });
 
+  test('social cards are available before JavaScript and never echo a share link', async () => {
+    const { app } = await createOffice();
+    for (const route of ['/', '/dashboard', '/test-office?share=private-preview-token', '/guides/integrations.html']) {
+      const html = await (await app.request(`http://office.example${route}`, { headers: { 'x-forwarded-proto': 'https', 'x-forwarded-host': 'untrusted.example' } })).text();
+      const image = html.match(/property="og:image" content="([^"]+)"/)?.[1];
+      expect(image).toBe('https://office.example/img/virtual-office-og.jpg');
+      expect(html).toContain(`name="twitter:image" content="${image}"`);
+      expect(html).toContain('name="description"');
+      expect(html).toContain('rel="apple-touch-icon"');
+      expect(html).toContain(`property="og:url" content="https://office.example${route.startsWith('/guides/') ? route : '/'}"`);
+      expect(html).not.toContain('private-preview-token');
+    }
+    for (const [asset, mime] of [['/img/virtual-office-og.jpg', 'image/jpeg'], ['/favicon.ico', 'image/x-icon']] as const) {
+      const response = await app.request(asset);
+      expect(response.status).toBe(200);
+      expect(response.headers.get('content-type')).toBe(mime);
+    }
+  });
+
   test("serves assets with the right content type", async () => {
     const office = await createOffice();
     const css = await office.app.request("/styles.css");

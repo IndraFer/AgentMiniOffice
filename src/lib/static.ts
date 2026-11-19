@@ -10,6 +10,7 @@ const CONTENT_TYPES: Record<string, string> = {
   ".json": "application/json; charset=utf-8",
   ".svg": "image/svg+xml",
   ".png": "image/png",
+  ".jpg": "image/jpeg",
   ".webp": "image/webp",
   ".ico": "image/x-icon",
   ".zip": "application/zip",
@@ -24,7 +25,6 @@ const CONTENT_TYPES: Record<string, string> = {
  * be runtime specific and the dual runtime rule is not worth weakening for a convenience.
  *
  * Routing rules, in order:
- *   /favicon.ico      no content
  *   /api/*            JSON 404, so an API typo never returns HTML
  *   an existing file  served with its content type
  *   a path without an extension  the shell (/ , /dashboard , /<slug>)
@@ -34,6 +34,15 @@ export function staticRoutes(publicDir: string): Hono {
   const root = path.resolve(publicDir);
   const indexFile = path.join(root, "index.html");
   const app = new Hono();
+
+  function servePage(c: Context, file: string) {
+    // Use only the request origin, never the office slug, query string or proxy-supplied host.
+    const url = new URL(c.req.url);
+    if (c.req.header('x-forwarded-proto') === 'https') url.protocol = 'https:';
+    const origin = url.origin.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+    const html = fs.readFileSync(file, 'utf8').replaceAll('__PUBLIC_ORIGIN__', () => origin);
+    return c.html(html, 200, { 'cache-control': 'no-store' });
+  }
 
   const jsonNotFound = (c: Context, pathname: string) =>
     c.json({ error: { code: "not_found", message: `GET ${pathname} does not exist` } }, 404);
@@ -46,7 +55,6 @@ export function staticRoutes(publicDir: string): Hono {
       return c.text("bad request", 400);
     }
 
-    if (pathname === "/favicon.ico") return c.body(null, 204);
     if (pathname.startsWith("/api/")) return jsonNotFound(c, pathname);
 
     const relative = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
@@ -64,24 +72,17 @@ export function staticRoutes(publicDir: string): Hono {
 
     if (stat?.isFile()) {
       const extension = path.extname(resolved).toLowerCase();
+      if (extension === '.html') return servePage(c, resolved);
       return new Response(fs.readFileSync(resolved), {
         headers: {
           "content-type": CONTENT_TYPES[extension] ?? "application/octet-stream",
-          // Shells and installable downloads have stable URLs across deployments.
-          "cache-control": extension === ".html" || relative.startsWith("downloads/") ? "no-store" : "public, max-age=60",
+          "cache-control": relative.startsWith("downloads/") ? "no-store" : "public, max-age=60",
         },
       });
     }
 
     // Client routes: /dashboard and /<slug> both render the same shell.
-    if (path.extname(pathname) === "") {
-      return new Response(fs.readFileSync(indexFile), {
-        headers: {
-          "content-type": CONTENT_TYPES[".html"] ?? "text/html",
-          "cache-control": "no-store",
-        },
-      });
-    }
+    if (path.extname(pathname) === "") return servePage(c, indexFile);
 
     return jsonNotFound(c, pathname);
   });
