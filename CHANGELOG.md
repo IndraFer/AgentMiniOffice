@@ -5,6 +5,8 @@ project and its Hermes connector follow the [versioning policy](CONTRIBUTING.md#
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-20
+
 ### Added
 
 - Member task cards show briefs, created/finished times and reported outcomes. Done shows the last 72 hours without deleting history. Updated Pi downloads and Hermes 0.4.0 return a marked one-line summary or reason from the task turn without a second model call.
