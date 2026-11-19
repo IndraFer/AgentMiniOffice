@@ -119,6 +119,21 @@ export function officesRoutes({ db, demo, store, live }: OfficesContext): Hono {
     });
   });
 
+  app.put('/offices/:slug/agents/:id/appearance', async (c) => {
+    const guard = requireOffice(c, db, c.req.param('slug'), true);
+    if ('response' in guard) return guard.response;
+    if (guard.session.role !== 'owner') return fail(c,403,'forbidden','only the Owner can change an avatar');
+    const body: unknown = await c.req.json().catch(() => null);
+    const variation = isPlainObject(body) ? body.variation : undefined;
+    if (variation !== null && !(typeof variation === 'number' && Number.isInteger(variation) && variation >= 1 && variation <= 2147483647))
+      return fail(c,400,'validation_failed','variation must be null or an integer between 1 and 2147483647');
+    const org = guard.office.id;
+    const updated = db.prepare('UPDATE agents SET avatar_variation=? WHERE id=? AND org_id=? AND archived_at IS NULL').run(variation,c.req.param('id'),org);
+    if (!updated.changes) return fail(c,404,'not_found','session no longer exists');
+    live.bus.publish({ event:'roster', data:{ org_id:org } });
+    return c.json({ avatar_variation:variation });
+  });
+
   app.delete('/offices/:slug/agents/:id', (c) => {
     const guard=requireOffice(c,db,c.req.param('slug'),true);
     if ('response' in guard) return guard.response;

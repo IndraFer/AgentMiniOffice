@@ -30,7 +30,7 @@ function remove(db:Db, live:Live, org:string, row:Candidate) {
   }
   // Keep the credential anchor, scopes and replay watermark, but no roster entry or workload.
   db.prepare('INSERT INTO dormant_dedicated(agent_id,last_seq) VALUES(?,?)').run(row.id,live.store.lastSeq(row.id));
-  db.prepare('UPDATE agents SET archived_at=? WHERE org_id=? AND id=?').run(new Date().toISOString(),org,row.id);
+  db.prepare('UPDATE agents SET archived_at=?, avatar_variation=NULL WHERE org_id=? AND id=?').run(new Date().toISOString(),org,row.id);
   for (const sql of ['DELETE FROM tasks WHERE agent_id=?','DELETE FROM events WHERE agent_id=?',
     'DELETE FROM runs WHERE agent_id=?','DELETE FROM daily_aggregates WHERE agent_id=?',
     'DELETE FROM agent_presence WHERE agent_id=?','DELETE FROM visit_labels WHERE agent_id=?']) db.prepare(sql).run(row.id);

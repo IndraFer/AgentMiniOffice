@@ -223,6 +223,7 @@ random UUID tails, so a resync does not reverse events accepted within the same 
 | `GET` | `/auth/me` | current member and office |
 | `POST` | `/auth/register` | creates an office and its owner, when enabled |
 | `GET` | `/offices` | your office, its agents, token counts |
+| `PUT` | `/offices/{slug}/agents/{id}/appearance` | same-office Owner only: set or clear a visit's cosmetic variation |
 | `PATCH` | `/offices/{slug}` | same-office Owner only: rename the office display name |
 | `POST` | `/offices/{slug}/demo` | start demo; optional integer `count` 5–8, default 6 |
 | `DELETE` | `/offices/{slug}/demo` | stop and clear this panel demo's agents and their assigned tasks, runs, tokens and presence; startup also clears leftovers. CLI or ambiguous ownership is preserved. A demo parent linked to another worker's run is retained to prevent cascading deletion of that worker's history. |
@@ -238,6 +239,8 @@ not truncated. Existing office names are not rewritten. Rename accepts only `{ "
 `{ "name": "KoiN Studio", "slug": "original-slug" }`. Invalid input returns 400, a missing member
 session 401, and a wrong office or non-Owner role 403. The slug, share links and credentials do not
 change. Office views receive the name in the next snapshot; no new SSE event is required.
+
+Appearance accepts `{ "variation": 123 }` (integer 1–2147483647) or `{ "variation": null }` to restore the original ID-based look. The response and office snapshots expose `avatar_variation`. Saving notifies this office's readers via `roster`. The variation belongs to the registered agent ID, survives a transient disconnect, and is cleared when the visit is removed. A newly registered agent never inherits a look by name, project or connector. Synthetic child-run actors have their own default looks. No machine permission or task state changes.
 
 Board writes never finish a task. Only the run holding the lease can `ack` or `fail` it, so the panel
 cannot fake work that an agent never did.

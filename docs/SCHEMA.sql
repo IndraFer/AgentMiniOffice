@@ -1,4 +1,4 @@
--- AgentMiniOffice: SQLite schema v1
+-- AgentMiniOffice: SQLite schema v3
 -- Every primary key is TEXT UUIDv7 (36 characters, lowercase, hyphenated), generated in the
 -- application layer. No AUTOINCREMENT anywhere. Hard deletes leave no numbered holes.
 -- All timestamps are TEXT ISO8601 UTC, for example '2026-11-17T13:45:43.120Z'.
@@ -115,6 +115,7 @@ CREATE TABLE IF NOT EXISTS agents (
   kind          TEXT NOT NULL,              -- hermes | openclaw | codex | claude | pi | antigravity | other
   host          TEXT,                       -- vps | homelab | macbook
   project       TEXT,                       -- project slug, for example 'auth-service'
+  avatar_variation INTEGER CHECK (avatar_variation BETWEEN 1 AND 2147483647), -- NULL: original ID-based look
   fingerprint   TEXT,                       -- optional, host:harness:project, display only
   version       TEXT,
   capabilities  TEXT NOT NULL DEFAULT '[]', -- JSON array of strings

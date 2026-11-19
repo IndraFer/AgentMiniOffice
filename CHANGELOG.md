@@ -5,6 +5,12 @@ project and its Hermes connector follow the [versioning policy](CONTRIBUTING.md#
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-20
+
+### Added
+
+- Agent details show a portrait built from the office's 3D avatar. Owners can preview another look, save it for that visit, or restore the original. Existing avatars keep their original appearance unless customized.
+
 ### Fixed
 
 - Moved the coffee machine and its standing spot slightly farther from the sofa. Avatars can still reach the machine but can no longer squeeze between the planter and the sofa and get stuck passing each other there.

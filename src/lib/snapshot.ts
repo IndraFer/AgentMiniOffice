@@ -11,6 +11,7 @@ interface AgentRow {
   project: string | null;
   simulator: number;
   capabilities: string;
+  avatar_variation: number | null;
   created_at: string;
 }
 
@@ -106,7 +107,7 @@ export function buildSnapshot(db: Db, store: PresenceStore, orgId: string): Snap
 
   const agents = db
     .prepare(
-      `SELECT a.id, coalesce(v.name,a.name) AS name, kind, host, project, simulator, capabilities, a.created_at
+      `SELECT a.id, coalesce(v.name,a.name) AS name, kind, host, project, simulator, capabilities, a.avatar_variation, a.created_at
          FROM agents a LEFT JOIN visit_labels v ON v.agent_id=a.id WHERE org_id = ? AND archived_at IS NULL ORDER BY name,a.id`,
     )
     .all<AgentRow>(orgId);
@@ -173,6 +174,7 @@ export function buildSnapshot(db: Db, store: PresenceStore, orgId: string): Snap
       kind: agent.kind,
       host: agent.host,
       project: agent.project,
+      avatar_variation: agent.avatar_variation,
       simulator: Number(agent.simulator) === 1,
       lifecycle: lifecycleOf(agent.capabilities),
       presence: current

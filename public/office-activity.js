@@ -138,6 +138,7 @@ export function sceneEntities(agents) {
         entity = {
           ...agent,
           id: `run:${run.id}`,
+          avatar_variation: null, // A temporary child run is not the registered agent.
           sourceAgentId: agent.id,
           tasks: [],
           runs: [run],

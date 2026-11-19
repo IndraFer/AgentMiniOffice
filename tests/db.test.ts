@@ -32,10 +32,17 @@ describe("db adapter", () => {
     expect(enabled()).toEqual([]); db.close();
   });
 
-  test("schema reports version 2", async () => {
+  test('upgrades a v2 agent in place without assigning an appearance', async () => {
     const db = await freshDb();
+    db.exec('ALTER TABLE agents DROP COLUMN avatar_variation; DELETE FROM schema_version; INSERT INTO schema_version VALUES(2,CURRENT_TIMESTAMP)');
+    const org=uuidv7(), id=uuidv7();
+    db.prepare('INSERT INTO organizations(id,name,slug,created_at) VALUES(?,?,?,?)').run(org,'Office','office',now);
+    db.prepare('INSERT INTO agents(id,org_id,name,kind,created_at) VALUES(?,?,?,?,?)').run(id,org,'Agent','pi',now);
+    applySchema(db,'docs/SCHEMA.sql');
+    expect(db.prepare('SELECT id,avatar_variation FROM agents').get()).toEqual({id,avatar_variation:null});
+    applySchema(db,'docs/SCHEMA.sql');
     const row = db.prepare("SELECT max(version) AS v FROM schema_version").get<{ v: number }>();
-    expect(Number(row?.v)).toBe(2);
+    expect(Number(row?.v)).toBe(3);
     db.close();
   });
 

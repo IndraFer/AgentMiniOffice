@@ -16,7 +16,12 @@ export function applySchema(db: Db, schemaFile: string, legacyPublicSlugs = proc
       const grant = db.prepare('INSERT OR IGNORE INTO public_offices(org_id) SELECT id FROM organizations WHERE slug=? AND archived_at IS NULL');
       for (const slug of legacyPublicSlugs.split(',').map(s => s.trim()).filter(Boolean)) grant.run(slug);
     }
-    if (version < 2) db.prepare('INSERT INTO schema_version(version,applied_at) VALUES(2,?)').run(new Date().toISOString());
+    if (version < 3) {
+      if (!db.prepare("SELECT 1 FROM pragma_table_info('agents') WHERE name='avatar_variation'").get()) {
+        db.exec('ALTER TABLE agents ADD COLUMN avatar_variation INTEGER CHECK (avatar_variation BETWEEN 1 AND 2147483647)');
+      }
+      db.prepare('INSERT INTO schema_version(version,applied_at) VALUES(3,?)').run(new Date().toISOString());
+    }
     db.exec('COMMIT');
   } catch (error) { db.exec('ROLLBACK'); throw error; }
 }

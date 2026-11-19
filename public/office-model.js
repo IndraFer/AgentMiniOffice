@@ -7,7 +7,8 @@ export function hash(text) {
   return value;
 }
 
-export function avatarStyle(id) {
+export function avatarStyle(agentId, variation = null) {
+  const id = variation == null ? agentId : `${agentId}:look:${variation}`;
   const n = hash(id);
   // Visual presentation only: no gender identity is inferred from a name or harness.
   const presentation = ["feminine", "masculine", "androgynous"][hash(`${id}:presentation`) % 3];

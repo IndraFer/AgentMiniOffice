@@ -19,6 +19,7 @@ import {
   stationActivity,
 } from "./office-activity.js";
 
+import { avatarPanel } from './avatar-panel.js';
 import { confirmAction, workspaceAccessPage } from "./workspace-access.js";
 
 const ROOM_LABEL = {
@@ -1492,8 +1493,9 @@ function workerInspector(office) {
         "aria-label": "Close Details",
         title: "Close Details",
         onclick: () => {
+          const target = selected;
           collapse();
-          trigger.focus();
+          target?.focus();
         },
       },
       icon("x", 16),
@@ -1521,19 +1523,34 @@ function workerInspector(office) {
         return;
       }
       status.textContent = `Office snapshot at ${clock(result.data.server_time)} · Agent ID: ${agent.id}`;
-      content.replaceChildren(agentBody(worker, result.data.agents, true));
+      const appearance = avatarPanel(h, worker, office.role === 'owner', async variation => {
+        const update = await api(officeUrlFor(office, `/agents/${encodeURIComponent(worker.id)}/appearance`), {
+          method: 'PUT', body: { variation },
+        });
+        if (!update.ok) throw Error(errorMessage(update,'Could not save appearance. Please try again.'));
+      });
+      content.replaceChildren(appearance, agentBody(worker, result.data.agents, true));
     } catch {
       if (request === version && panel.isConnected)
         status.textContent = "Could not load agent details. Select View Details to retry.";
     }
   }
   return {
+    restore(body) {
+      if (!selected) return;
+      const next = body.querySelector(`[data-inspect="${CSS.escape(selected.dataset.inspect)}"]`);
+      if (!next) { collapse(); return; }
+      selected = next;
+      next.setAttribute('aria-expanded','true');
+      next.closest('tr').after(detailRow);
+    },
     button: (agent) =>
       h(
         "button",
         {
           type: "button",
           class: "btn btn-quiet btn-sm",
+          'data-inspect': agent.id,
           "aria-label": `View Details: ${agent.name}`,
           "aria-expanded": "false",
           onclick: (e) => open(agent, e.currentTarget),
@@ -1633,6 +1650,7 @@ function agentsPage() {
             ),
           ]),
     );
+    inspector.restore(body);
   }
   fillRows(office.agents ?? [], office.role);
   void refresh();
