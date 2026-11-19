@@ -71,7 +71,7 @@ export function createLayout() {
   slot("lounge-a", "pantry", 15.6, 9.55, 0, "seated", "sofa");
   slot("lounge-b", "pantry", 17.6, 9.55, 0, "seated", "sofa");
   add("coffee-table", "coffee-table", 16.6, 11.8, 2.0, 0.8);
-  const coffee = add("coffee", "coffee", 19, 7.75, 1.1, 1.7);
+  const coffee = add("coffee", "coffee", 19, 7.6, 1.1, 1.7);
   slot("coffee", "pantry", coffee.x - 1.2, coffee.z, Math.PI / 2, "standing", coffee.id);
   add("water", "water", 19, 11.9, 0.65, 0.65);
   slot("water", "pantry", 17.95, 11.9, Math.PI / 2, "standing", "water");
