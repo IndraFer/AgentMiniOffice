@@ -1,6 +1,6 @@
 {
   "name": "agentminioffice",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "type": "module",
   "description": "A small self-hosted office where you watch your AI agents work.",
   "author": "IndraFer - KoiN Codeveloper",

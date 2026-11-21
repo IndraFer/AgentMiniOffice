@@ -59,7 +59,8 @@ export function staticRoutes(publicDir: string, publicOfficeName?: (slug: string
     const slug = c.req.param('slug');
     const promotion = '<a class="embed-promo" href="https://github.com/IndraFer/AgentMiniOffice" target="_blank" rel="noopener noreferrer">Get your own Agent Mini Office ↗</a>';
     const embedHead = '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Agent Mini Office · Live 3D</title><link rel="stylesheet" href="/styles.css">';
-    const placeholder = (message: string) => `<div class="embed-message"><div class="embed-message-card"><p role="status">${message}</p>${promotion}</div></div>`;
+    // Always ship the same empty set, never an image of the last live frame.
+    const placeholder = (message: string) => `<div class="embed-message"><img src="/img/empty-office.webp" width="1200" height="760" alt=""><div class="embed-message-card"><p role="status">${message}</p>${promotion}</div></div>`;
     if (!publicOfficeName?.(slug)) return c.html(`<!doctype html><html lang="en"><head>${embedHead}</head><body class="office-embed"><main>${placeholder('Office is private or unavailable.')}</main></body></html>`,404);
     // Use the host's Three.js import map, including any self-hosted vendor override.
     const map = fs.readFileSync(indexFile,'utf8').match(/<script type="importmap">[\s\S]*?<\/script>/)?.[0] ?? '';

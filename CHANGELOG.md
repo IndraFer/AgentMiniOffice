@@ -5,6 +5,12 @@ project and its Hermes connector follow the [versioning policy](CONTRIBUTING.md#
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-11-21
+
+### Fixed
+
+- When live activity is unavailable, the embed displays a static, empty office instead of a blank background or the last live frame. No agent, name, or task is included in the image.
+
 ## [0.3.3] - 2026-11-21
 
 ### Fixed
