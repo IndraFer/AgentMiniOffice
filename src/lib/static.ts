@@ -30,7 +30,11 @@ const CONTENT_TYPES: Record<string, string> = {
  *   a path without an extension  the shell (/ , /dashboard , /<slug>)
  *   anything else     JSON 404
  */
-export function staticRoutes(publicDir: string, publicOfficeName?: (slug: string) => string | undefined): Hono {
+export function staticRoutes(
+  publicDir: string,
+  publicOfficeName?: (slug: string) => string | undefined,
+  embedFrameAncestors = "*",
+): Hono {
   const root = path.resolve(publicDir);
   const indexFile = path.join(root, "index.html");
   const app = new Hono();
@@ -56,6 +60,9 @@ export function staticRoutes(publicDir: string, publicOfficeName?: (slug: string
   app.get('/embed/:slug', (c) => {
     c.header('Cache-Control','private, no-store');
     c.header('Referrer-Policy','no-referrer');
+    // Public embeds are meant for other sites. A frame-ancestors policy also overrides an
+    // X-Frame-Options header added by a reverse proxy, which would otherwise block the frame.
+    c.header('Content-Security-Policy', `frame-ancestors ${embedFrameAncestors}`);
     const slug = c.req.param('slug');
     const promotion = '<a class="embed-promo" href="https://github.com/IndraFer/AgentMiniOffice" target="_blank" rel="noopener noreferrer">Get your own Agent Mini Office ↗</a>';
     const embedHead = '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Agent Mini Office · Live 3D</title><link rel="stylesheet" href="/styles.css">';

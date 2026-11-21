@@ -11,7 +11,7 @@ export function embedControls(h, slug) {
         try {await navigator.clipboard.writeText(code.value);feedback.textContent='Embed HTML copied.';}
         catch {code.focus();code.select();feedback.textContent='HTML selected. Copy it manually.';}
       }},'Copy HTML'),feedback,
-      h('small',{class:'muted'},'Public View only. The frame fills its container; set the container width in your layout. If your site uses CSP, allow ',location.origin,' in frame-src. On the office host, allow your site in frame-ancestors for /embed/ and avoid conflicting X-Frame-Options on that route.')));
+      h('small',{class:'muted'},'Public View only. The frame fills its container; set the container width in your layout. If your site uses CSP, allow ',location.origin,' in frame-src. The office already allows any site to frame /embed/; set MINIOFFICE_EMBED_FRAME_ANCESTORS on the office host to restrict that to your own sites.')));
   function update() {
     // Build both the snippet and preview from one element. No private link or query is accepted.
     const frame=h('iframe',{src:url,title:'Live 3D office',loading:'lazy',referrerpolicy:'no-referrer',style:`display:block;width:100%;aspect-ratio:${picker.value};border:0;`});

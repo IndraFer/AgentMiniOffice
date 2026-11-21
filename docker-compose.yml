@@ -20,6 +20,7 @@ services:
       MINIOFFICE_SESSION_TTL_DAYS:
       MINIOFFICE_SECURE_COOKIES:
       MINIOFFICE_ALLOW_REGISTRATION:
+      MINIOFFICE_EMBED_FRAME_ANCESTORS:
       # Compatibility only: import existing public offices on the first v1 database upgrade.
       MINIOFFICE_PUBLIC_SLUGS:
     ports:

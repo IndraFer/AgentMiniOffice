@@ -196,6 +196,11 @@ The Agents registration form remains separate and creates a dedicated reporting 
   changing permissions. Viewers retain read navigation, but do not see credential issuance, demo,
   task creation/cancellation or share-creation controls. Server checks remain authoritative.
 - **Share Office** includes an Owner-only Public View switch and an explanation of anonymous read access. When enabled, a short office URL and Copy link replace the private link form. Disabling it stops public-only live streams without revoking private links.
+- **Embed 3D Office** is its own disclosure beside Share Office and appears only while Public View is on,
+  so the snippet can be opened without expanding the sharing chapter. The snippet carries no token or
+  query string. `/embed/<slug>` sends `frame-ancestors *` by default, which also overrides an
+  `X-Frame-Options` header added by a reverse proxy; set `MINIOFFICE_EMBED_FRAME_ANCESTORS` to limit
+  the allowed parent sites. Non-embed pages keep `frame-ancestors 'self'`.
 - Private link creation is an explicit disclosure with a label, 1/7/30-day expiry (7 by default), and required
   acknowledgement that office information is visible to anyone holding the link. A rejected request
   keeps the form available. Success shows the link once and its server-returned expiry; the creation

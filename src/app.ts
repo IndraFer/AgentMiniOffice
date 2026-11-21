@@ -28,6 +28,8 @@ export interface AppContext {
   sessionTtlMs?: number;
   secureCookies?: boolean;
   allowRegistration?: boolean;
+  /** Origins allowed to frame /embed/:slug. Defaults to * because the embed is public-only. */
+  embedFrameAncestors?: string;
   demo?: DemoDriver;
   requestLog?: (line: string) => void;
 }
@@ -83,7 +85,14 @@ export function createApp(ctx: AppContext): Hono {
   // Registered last so it only catches what the API did not claim.
   const publicPreview = ctx.db.prepare(`SELECT o.name FROM public_offices p
     JOIN organizations o ON o.id = p.org_id WHERE o.slug = ? AND o.archived_at IS NULL`);
-  app.route("/", staticRoutes(ctx.publicDir ?? "public", slug => publicPreview.get<{ name: string }>(slug)?.name));
+  app.route(
+    "/",
+    staticRoutes(
+      ctx.publicDir ?? "public",
+      slug => publicPreview.get<{ name: string }>(slug)?.name,
+      ctx.embedFrameAncestors,
+    ),
+  );
 
   app.notFound((c) =>
     c.json(

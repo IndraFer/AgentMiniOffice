@@ -5,6 +5,12 @@ project and its Hermes connector follow the [versioning policy](CONTRIBUTING.md#
 
 ## [Unreleased]
 
+## [0.3.8] - 2026-11-21
+
+### Fixed
+
+- A public embed can be framed on another site even when a reverse proxy adds `X-Frame-Options: SAMEORIGIN`. `/embed/:slug` now sends `frame-ancestors *`, which takes precedence over that header; `MINIOFFICE_EMBED_FRAME_ANCESTORS` restricts the allowed parent sites. Every other page keeps `frame-ancestors 'self'`.
+
 ## [0.3.7] - 2026-11-21
 
 ### Fixed

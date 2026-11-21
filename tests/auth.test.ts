@@ -427,6 +427,9 @@ describe("office view access", () => {
       await guest.read(); await shared.read(); await embed.read();
       const page=await office.app.request('/embed/test-office');
       expect(page.headers.get('cache-control')).toContain('no-store');
+      // A reverse proxy may add X-Frame-Options; frame-ancestors is what decides a public embed.
+      expect(page.headers.get('content-security-policy')).toBe('frame-ancestors *');
+      expect((await office.app.request('/')).headers.get('content-security-policy')).toBe("frame-ancestors 'self'");
       const html=await page.text(); expect(html).toContain('/embed.js'); expect(html).not.toContain('/app.js');
       expect((await toggle(false)).status).toBe(200);
       office.live.bus.publish({event:'roster',data:{org_id:office.orgId,fixture:'post-disable'}});

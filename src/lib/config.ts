@@ -33,6 +33,12 @@ function positiveInt(raw: string | undefined, fallback: number): number {
   return Number.isFinite(value) && value > 0 ? Math.trunc(value) : fallback;
 }
 
+/** A single header value: no separators or line breaks that could inject another header. */
+function headerValue(raw: string | undefined, fallback: string): string {
+  const value = raw?.replace(/[\r\n;]/g, " ").trim();
+  return value || fallback;
+}
+
 function minutes(raw: string | undefined, fallback: number): number {
   const value = Number(raw);
   return Number.isSafeInteger(value) && value > 0 ? value : fallback;
@@ -57,4 +63,5 @@ export const config = {
   sessionTtlMs: positiveInt(process.env.MINIOFFICE_SESSION_TTL_DAYS, 30) * 86_400_000,
   secureCookies: process.env.MINIOFFICE_SECURE_COOKIES === "1",
   allowRegistration: process.env.MINIOFFICE_ALLOW_REGISTRATION === "1",
+  embedFrameAncestors: headerValue(process.env.MINIOFFICE_EMBED_FRAME_ANCESTORS, "*"),
 } as const;
