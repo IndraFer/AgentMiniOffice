@@ -5,6 +5,12 @@ project and its Hermes connector follow the [versioning policy](CONTRIBUTING.md#
 
 ## [Unreleased]
 
+## [0.3.7] - 2026-11-21
+
+### Fixed
+
+- Forecast and Weather now scale together in the iframe instead of using separate fixed widths. Each card keeps the proportions it has in the full office for the same text, and both match their original size at the reference canvas width.
+
 ## [0.3.6] - 2026-11-21
 
 ### Changed

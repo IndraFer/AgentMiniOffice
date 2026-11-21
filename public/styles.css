@@ -2496,26 +2496,15 @@ select.input {
   position: fixed;
   inset-inline-start: var(--embed-inset);
   inset-block-end: var(--embed-inset);
-  max-inline-size: calc(100% - 12.5 * var(--embed-ui)); /* leave room for the host link */
-  /* Match the full office's 12px spacing unit on its ~1044 × 610 canvas.
-     Weather scales with the scene, without the minimum size used by controls. */
-  --s3: min(.75rem, 1.05vw, 1.8vh);
-  --s1: calc(var(--s3) / 3);
-  --s2: calc(var(--s1) * 2);
-  --fs-xs: calc(var(--s3) * .96);
-  --r-md: calc(var(--s3) * .8333);
+  inline-size: max-content;
+  transform-origin: bottom left;
+  /* Keep the native cards intact. The square root shrinks the group more gently
+     than the canvas; the linear limit reserves space for credit on small frames.
+     tan(atan2(width, reference)) yields a unitless width ratio. */
+  --office-width-ratio: tan(atan2(100vw, 1044px));
+  scale: min(1, sqrt(var(--office-width-ratio)), tan(atan2(100vw, 624px)));
 }
-/* Each card gets ten percentage points above its own full-office reference. */
-.office-embed .scene-forecast {
-  order: -1;
-  inline-size: 24.8vw;
-  font-size: calc(var(--fs-xs) * 1.68);
-}
-.office-embed .scene-weather {
-  /* The full time + Rain / Windy label occupied 30.4% of the reference canvas. */
-  inline-size: 40.4vw;
-  font-size: min(1.47vw, 1rem);
-}
+.office-embed .scene-forecast { order: -1; }
 .office-embed .scene-hud { inset: var(--embed-inset) var(--embed-inset) auto; justify-content: end; }
 .office-embed .scene-hud button {
   position: relative;
