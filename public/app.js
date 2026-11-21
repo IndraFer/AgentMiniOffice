@@ -1263,12 +1263,13 @@ function sharingControls(office) {
     } catch { toggle.checked=office.public_view; status.textContent='Could not confirm the change. Refresh the overview to check its status.'; }
     finally { toggle.disabled=false; }
   });
-  return h('details', {class:'guide-topic'}, h('summary', {}, 'Share Office'),
+  const share = h('details', {class:'guide-topic'}, h('summary', {}, 'Share Office'),
     h('div', {class:'guide-topic-body'},
       office.role === 'owner' ? h('label', {class:'public-view-switch'}, 'Public View',
         toggle, h('span', {class:'switch-track', 'aria-hidden':'true'})) : null,
       h('p', {id:'public-view-description',class:'small muted'}, 'When Public View is on, anyone with the office URL can see live activity and task information without signing in. They cannot make changes. Turn it off to require a member login or private share link.'),
-      publicLink, embed.element, form, status, revealSlot));
+      publicLink, form, status, revealSlot));
+  return [share, embed.element];
 }
 
 function officeNameEditor(office) {

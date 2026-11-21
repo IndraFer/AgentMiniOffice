@@ -5,6 +5,12 @@ project and its Hermes connector follow the [versioning policy](CONTRIBUTING.md#
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-11-21
+
+### Changed
+
+- Embed 3D Office is now a separate accordion alongside Share Office. It appears only when Public View is on and can be opened while Share Office is closed.
+
 ## [0.3.4] - 2026-11-21
 
 ### Fixed
