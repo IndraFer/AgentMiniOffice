@@ -2484,14 +2484,40 @@ select.input {
   touch-action: none;
 }
 
-.office-embed { margin: 0; padding: 0; overflow: clip; }
+.office-embed {
+  /* These viewport units belong to the iframe, not the page hosting it. */
+  --embed-ui: clamp(.6rem, min(2.6vw, 3.5vh), .75rem);
+  --embed-inset: calc(.65 * var(--embed-ui));
+  margin: 0; padding: 0; overflow: clip;
+}
 .office-embed .stage { position: fixed; inset: 0; block-size: auto; min-block-size: 0; border: 0; border-radius: 0; }
 .office-embed .scene-footer { display: none; }
-.office-embed .scene-weather-stack { position: fixed; inset-inline-start: .5rem; inset-block-end: .5rem; max-inline-size: calc(100% - 10rem); }
+.office-embed .scene-weather-stack {
+  position: fixed;
+  inset-inline-start: var(--embed-inset);
+  inset-block-end: var(--embed-inset);
+  max-inline-size: calc(100% - 12.5 * var(--embed-ui)); /* leave room for the host link */
+  /* Match the full office's 12px spacing unit on its ~1044 × 610 canvas.
+     Weather scales with the scene, without the minimum size used by controls. */
+  --s3: min(.75rem, 1.05vw, 1.8vh);
+  --s1: calc(var(--s3) / 3);
+  --s2: calc(var(--s1) * 2);
+  --fs-xs: calc(var(--s3) * .96);
+  --r-md: calc(var(--s3) * .8333);
+}
 .office-embed .scene-forecast { order: -1; }
-.office-embed .scene-hud { justify-content: end; }
+.office-embed .scene-hud { inset: var(--embed-inset) var(--embed-inset) auto; justify-content: end; }
+.office-embed .scene-hud button {
+  position: relative;
+  padding: .33em .65em;
+  border-radius: .45em;
+  font-size: var(--embed-ui);
+  line-height: 1.15;
+}
+/* A compact painted button can still have a 24px-high pointer target. */
+.office-embed .scene-hud button::after { content: ''; position: absolute; inset: -4px 0; }
 .office-embed .embed-credit, .office-embed [role=status] { position: fixed; z-index: 2; color: #fff; background: #25333ae8; border-radius: .4rem; }
-.office-embed .embed-credit { inset-inline-end: .5rem; inset-block-end: .5rem; padding: .3rem .55rem; font: 500 12px/1.3 system-ui,sans-serif; text-decoration: none; }
+.office-embed .embed-credit { inset-inline-end: var(--embed-inset); inset-block-end: var(--embed-inset); padding: .32em .6em; font: 500 var(--embed-ui)/1.25 system-ui,sans-serif; text-decoration: none; }
 .office-embed .embed-credit:focus-visible { outline: 2px solid white; }
 .office-embed [role=status] { inset-block-start: .5rem; inset-inline-start: .5rem; margin: 0; padding: .4rem .6rem; }
 .embed-sample { max-inline-size: 32rem; }

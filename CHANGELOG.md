@@ -5,6 +5,12 @@ project and its Hermes connector follow the [versioning policy](CONTRIBUTING.md#
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-11-21
+
+### Changed
+
+- Forecast and weather cards retain the full office styling and scale with the iframe canvas. Reset View and the host credit also shrink in smaller embeds.
+
 ## [0.3.1] - 2026-11-21
 
 ### Added
