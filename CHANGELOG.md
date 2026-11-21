@@ -5,7 +5,11 @@ project and its Hermes connector follow the [versioning policy](CONTRIBUTING.md#
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-21
+
 ### Added
+
+- The public embed shows the office's simulated forecast above its current weather in the lower-left corner.
 
 - Share Office can generate a responsive, public-only 3D iframe, with a small link back to the host office. Turning Public View off clears a live embed.
 - Avatar drafts support Random, Men and Women style pools plus new face shapes, hair meshes, clothing cuts, footwear, colors and accessories. The updated catalogue also applies to existing visits and saved variations; the same seed remains stable between refreshes.

@@ -2486,7 +2486,9 @@ select.input {
 
 .office-embed { margin: 0; padding: 0; overflow: clip; }
 .office-embed .stage { position: fixed; inset: 0; block-size: auto; min-block-size: 0; border: 0; border-radius: 0; }
-.office-embed :is(.scene-footer,.scene-weather-stack) { display: none; }
+.office-embed .scene-footer { display: none; }
+.office-embed .scene-weather-stack { position: fixed; inset-inline-start: .5rem; inset-block-end: .5rem; max-inline-size: calc(100% - 10rem); }
+.office-embed .scene-forecast { order: -1; }
 .office-embed .scene-hud { justify-content: end; }
 .office-embed .embed-credit, .office-embed [role=status] { position: fixed; z-index: 2; color: #fff; background: #25333ae8; border-radius: .4rem; }
 .office-embed .embed-credit { inset-inline-end: .5rem; inset-block-end: .5rem; padding: .3rem .55rem; font: 500 12px/1.3 system-ui,sans-serif; text-decoration: none; }

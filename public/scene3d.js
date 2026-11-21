@@ -812,7 +812,8 @@ export function createOfficeScene({ container, onSelect }) {
     staticBatches.push(batch);
   }
 
-  const weatherScene = createWeatherScene(THREE, scene, location.pathname, camera);
+  // The embedded and full views of one office share a simulated forecast.
+  const weatherScene = createWeatherScene(THREE, scene, location.pathname.replace(/^\/embed\//, '/'), camera);
 
   function makeActor(data) {
     const variation = data.avatar_variation ?? null;
