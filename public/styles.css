@@ -2516,10 +2516,20 @@ select.input {
 }
 /* A compact painted button can still have a 24px-high pointer target. */
 .office-embed .scene-hud button::after { content: ''; position: absolute; inset: -4px 0; }
-.office-embed .embed-credit, .office-embed [role=status] { position: fixed; z-index: 2; color: #fff; background: #25333ae8; border-radius: .4rem; }
+.office-embed .embed-credit { position: fixed; z-index: 2; color: #fff; background: #25333ae8; border-radius: .4rem; }
 .office-embed .embed-credit { inset-inline-end: var(--embed-inset); inset-block-end: var(--embed-inset); padding: .32em .6em; font: 500 var(--embed-ui)/1.25 system-ui,sans-serif; text-decoration: none; }
 .office-embed .embed-credit:focus-visible { outline: 2px solid white; }
-.office-embed [role=status] { inset-block-start: .5rem; inset-inline-start: .5rem; margin: 0; padding: .4rem .6rem; }
+.office-embed .embed-message {
+  position: fixed; inset: 0; z-index: 2;
+  display: grid; place-items: center;
+  padding: .5rem; text-align: center;
+  background: var(--surface-2); color: var(--text-2);
+}
+.office-embed .embed-message-card { display: grid; justify-items: center; gap: .5em; }
+.office-embed .embed-message p { margin: 0; text-wrap: balance; }
+.office-embed .embed-promo { font-size: var(--fs-sm); text-underline-offset: .18em; }
+.office-embed .embed-message:has([role=status][hidden]),
+.office-embed .embed-message:has([role=status]:not([hidden])) ~ .embed-credit { display: none; }
 .embed-sample { max-inline-size: 32rem; }
 .stage canvas {
   position: relative;

@@ -5,6 +5,12 @@ project and its Hermes connector follow the [versioning policy](CONTRIBUTING.md#
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-11-21
+
+### Fixed
+
+- Private and disconnected embeds center the status message and a single project link instead of leaving the normal office link in the corner.
+
 ## [0.3.2] - 2026-11-21
 
 ### Changed

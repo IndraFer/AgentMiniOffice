@@ -23,7 +23,7 @@ async function draw() {
     }
     scene.update(sceneEntities(snapshot.agents), snapshot.org.name);
     status.hidden = true;
-  } catch { if (stamp === revision) stop('3D view unavailable. Check WebGL or open the office directly.'); }
+  } catch { if (stamp === revision) stop('3D view unavailable. Check WebGL and reload to try again.'); }
 }
 function redraw() {
   if (!drawTimer) drawTimer = setTimeout(()=>{drawTimer=null;void draw();},100);
