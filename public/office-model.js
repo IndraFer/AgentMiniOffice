@@ -1,4 +1,5 @@
 // Spatial truth shared by rendering, routing and interaction slots. No DOM or Three.js.
+import { catalogueLook } from './avatar-catalog.js';
 import { workVariants, atStation } from './office-variants.js';
 import { standbyEligible, stationActivity } from "./office-activity.js";
 export function hash(text) {
@@ -9,25 +10,7 @@ export function hash(text) {
 
 export function avatarStyle(agentId, variation = null) {
   const id = variation == null ? agentId : `${agentId}:look:${variation}`;
-  const n = hash(id);
-  // Visual presentation only: no gender identity is inferred from a name or harness.
-  const presentation = ["feminine", "masculine", "androgynous"][hash(`${id}:presentation`) % 3];
-  const hairstyles = {
-    feminine: ["bob", "shoulder", "ponytail", "bun", "curls"],
-    masculine: ["crop", "side-part", "curls", "ponytail"],
-    androgynous: ["bob", "crop", "bun", "shoulder", "side-part"],
-  }[presentation];
-  return {
-    presentation,
-    hairStyle: hairstyles[hash(`${id}:hair`) % hairstyles.length],
-    outfit: ["shirt", "cardigan", "tunic", "jacket"][hash(`${id}:outfit`) % 4],
-    shirt: ["#528f9a", "#cf8264", "#8b7fb5", "#719566", "#d4aa58", "#637eb3", "#bc7191", "#4a9b88"][
-      n % 8
-    ],
-    skin: ["#edc5a2", "#c58e67", "#945d43", "#f4d7ba"][(n >>> 4) % 4],
-    hair: ["#322c31", "#6f4631", "#bc8b51", "#413c55"][(n >>> 8) % 4],
-    accessory: (n >>> 16) % 3,
-  };
+  return catalogueLook(hash(id));
 }
 
 export function createLayout() {

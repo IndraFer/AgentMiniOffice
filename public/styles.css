@@ -2484,6 +2484,15 @@ select.input {
   touch-action: none;
 }
 
+.office-embed { margin: 0; padding: 0; overflow: clip; }
+.office-embed .stage { position: fixed; inset: 0; block-size: auto; min-block-size: 0; border: 0; border-radius: 0; }
+.office-embed :is(.scene-footer,.scene-weather-stack) { display: none; }
+.office-embed .scene-hud { justify-content: end; }
+.office-embed .embed-credit, .office-embed [role=status] { position: fixed; z-index: 2; color: #fff; background: #25333ae8; border-radius: .4rem; }
+.office-embed .embed-credit { inset-inline-end: .5rem; inset-block-end: .5rem; padding: .3rem .55rem; font: 500 12px/1.3 system-ui,sans-serif; text-decoration: none; }
+.office-embed .embed-credit:focus-visible { outline: 2px solid white; }
+.office-embed [role=status] { inset-block-start: .5rem; inset-inline-start: .5rem; margin: 0; padding: .4rem .6rem; }
+.embed-sample { max-inline-size: 32rem; }
 .stage canvas {
   position: relative;
   z-index: 1;

@@ -47,11 +47,21 @@ export function staticRoutes(publicDir: string, publicOfficeName?: (slug: string
     };
     const html = fs.readFileSync(file, 'utf8').replace(/__(?:PUBLIC_ORIGIN|PREVIEW_URL|PREVIEW_TITLE)__/g, key =>
       values[key]!.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'));
-    return c.html(html, 200, { 'cache-control': 'no-store' });
+    return c.html(html, 200, { 'cache-control': 'no-store', 'content-security-policy': "frame-ancestors 'self'" });
   }
 
   const jsonNotFound = (c: Context, pathname: string) =>
     c.json({ error: { code: "not_found", message: `GET ${pathname} does not exist` } }, 404);
+
+  app.get('/embed/:slug', (c) => {
+    c.header('Cache-Control','private, no-store');
+    c.header('Referrer-Policy','no-referrer');
+    const slug = c.req.param('slug');
+    if (!publicOfficeName?.(slug)) return c.text('Office is private or unavailable.',404);
+    // Use the host's Three.js import map, including any self-hosted vendor override.
+    const map = fs.readFileSync(indexFile,'utf8').match(/<script type="importmap">[\s\S]*?<\/script>/)?.[0] ?? '';
+    return c.html(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Agent Mini Office · Live 3D</title><link rel="stylesheet" href="/styles.css">${map}</head><body class="office-embed"><main class="stage" aria-label="Live virtual office"></main><p role="status">Loading office…</p><a class="embed-credit" href="/${encodeURIComponent(slug)}" target="_blank" rel="noopener noreferrer" aria-label="Open the public office in Agent Mini Office (new tab)">Agent Mini Office ↗</a><script type="module" src="/embed.js"></script></body></html>`);
+  });
 
   app.get("*", (c) => {
     let pathname: string;

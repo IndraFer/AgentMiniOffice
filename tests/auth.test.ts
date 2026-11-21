@@ -389,6 +389,13 @@ describe("office view access", () => {
     expect((await office.app.request(`/api/v1/offices/${slug}/snapshot`)).status).toBe(401);
 
     const cookie = cookieOf(await signIn(office));
+    for (const path of ['snapshot','stream']) {
+      const embedded = await office.app.request(`/api/v1/offices/${slug}/${path}?view=embed&share=${office.shareToken}`, {headers:{cookie}});
+      expect(embedded.status).toBe(401);
+    }
+    const shell = await office.app.request(`/embed/${slug}?share=${office.shareToken}`, {headers:{cookie}});
+    expect(shell.status).toBe(404);
+    expect(await shell.text()).not.toContain('pi-test');
     const asMember = await office.app.request(`/api/v1/offices/${slug}/snapshot`, {
       headers: { cookie },
     });
@@ -414,18 +421,24 @@ describe("office view access", () => {
     expect((await toggle(true)).status).toBe(200);
     expect((await office.app.request(`${base}/snapshot`)).status).toBe(200);
     const guest=(await office.app.request(`${base}/stream`)).body!.getReader();
+    const embed=(await office.app.request(`${base}/stream?view=embed&share=${office.shareToken}`,{headers:{cookie}})).body!.getReader();
     const shared=(await office.app.request(`${base}/stream?share=${office.shareToken}`)).body!.getReader();
     try {
-      await guest.read(); await shared.read();
+      await guest.read(); await shared.read(); await embed.read();
+      const page=await office.app.request('/embed/test-office');
+      expect(page.headers.get('cache-control')).toContain('no-store');
+      const html=await page.text(); expect(html).toContain('/embed.js'); expect(html).not.toContain('/app.js');
       expect((await toggle(false)).status).toBe(200);
       office.live.bus.publish({event:'roster',data:{org_id:office.orgId,fixture:'post-disable'}});
       expect(new TextDecoder().decode((await guest.read()).value)).toContain('access-revoked');
       expect((await guest.read()).done).toBe(true);
+      expect(new TextDecoder().decode((await embed.read()).value)).toContain('access-revoked');
+      expect((await embed.read()).done).toBe(true);
       expect(new TextDecoder().decode((await shared.read()).value)).toContain('post-disable');
       expect((await office.app.request(`${base}/snapshot`)).status).toBe(401);
       expect((await office.app.request(`${base}/stream`)).status).toBe(401);
       expect((await office.app.request(`${base}/snapshot?share=${office.shareToken}`)).status).toBe(200);
-    } finally { await guest.cancel(); await shared.cancel(); }
+    } finally { await guest.cancel(); await shared.cancel(); await embed.cancel(); }
   });
 
   test("an unknown slug is a 404, not a 401", async () => {

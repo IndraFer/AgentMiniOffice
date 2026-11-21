@@ -250,7 +250,9 @@ and it never creates a second administrator.
 
 Only the office Owner may `PUT /offices/:slug/public-view` with `{"enabled":true}` or `{"enabled":false}`. The response includes the stored boolean `public_view`, also present in the member's office listing. Off ends anonymous live streams (`access-revoked`); turning it off does not revoke member sessions or private share tokens.
 
-Read access to an office is the union of three things: the office has Public View enabled, the caller holds a
+`GET /embed/:slug` is a canvas-only public page. Its scoped snapshot and SSE requests specify `?view=embed`: only an active Public View grant authorizes these reads, even when the visitor has a member cookie or valid share token. Missing and private offices do not serve an embed shell. Revocation clears the embedded scene. The snippet contains no credential; the link in its corner opens the host's public office in a new tab. This is a presentation of the public office, not an additional privacy or redaction layer.
+
+Read access to the regular office page is the union of three things: the office has Public View enabled, the caller holds a
 share link for that office, or the caller is signed in as a member of it. Public means read only.
 
 ### 5.6 Health

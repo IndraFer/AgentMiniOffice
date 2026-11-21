@@ -38,6 +38,10 @@ export function resolveReadAccess(
 
   if (!office) return { orgId: null, reason: "not_found" };
 
+  // Embeds never derive access from the embedding visitor's account or a share token.
+  if (c.req.query('view') === 'embed') return office.public_view
+    ? { orgId:office.id, via:'public' } : { orgId:null, reason:'unauthorized' };
+
   const session = sessionFromRequest(c, db);
   if (session?.orgId === office.id) return { orgId: office.id, via: "member" };
 

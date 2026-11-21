@@ -19,6 +19,7 @@ import {
   stationActivity,
 } from "./office-activity.js";
 
+import { embedControls } from './embed-controls.js';
 import { avatarPanel } from './avatar-panel.js';
 import { confirmAction, workspaceAccessPage } from "./workspace-access.js";
 
@@ -1242,7 +1243,9 @@ function sharingControls(office) {
       catch { status.textContent='Copy failed. Select the office URL and copy it manually.'; }
     }}, 'Copy link'));
   const toggle = h('input', {type:'checkbox', role:'switch', 'aria-describedby':'public-view-description'});
+  const embed = embedControls(h,office.slug);
   function displayMode() {
+    embed.enable(office.public_view);
     toggle.checked = office.public_view;
     publicLink.hidden = !office.public_view;
     form.hidden = office.public_view;
@@ -1265,7 +1268,7 @@ function sharingControls(office) {
       office.role === 'owner' ? h('label', {class:'public-view-switch'}, 'Public View',
         toggle, h('span', {class:'switch-track', 'aria-hidden':'true'})) : null,
       h('p', {id:'public-view-description',class:'small muted'}, 'When Public View is on, anyone with the office URL can see live activity and task information without signing in. They cannot make changes. Turn it off to require a member login or private share link.'),
-      publicLink, form, status, revealSlot));
+      publicLink, embed.element, form, status, revealSlot));
 }
 
 function officeNameEditor(office) {

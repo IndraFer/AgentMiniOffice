@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { buildFigure, createShapes } from './avatar-figure.js';
+import { drawVariation, silhouette } from './avatar-catalog.js';
 import { avatarStyle } from './office-model.js';
 
 // One lazy, offscreen studio for the page, not a WebGL context or render loop per agent.
@@ -11,9 +12,9 @@ function createStudio() {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
   const scene = new THREE.Scene();
-  const camera = new THREE.OrthographicCamera(-0.85,0.85,0.85,-0.85,0.1,12);
+  const camera = new THREE.OrthographicCamera(-1.12,1.12,1.12,-1.12,0.1,12);
   camera.position.set(1.35,1.78,4.8);
-  camera.lookAt(0,1.33,0);
+  camera.lookAt(0,1.04,0);
   scene.add(new THREE.HemisphereLight(0xfff8eb,0xd3d9db,1.9));
   const key = new THREE.DirectionalLight(0xfff4e1,2.3);
   key.position.set(-2,4,4);
@@ -35,13 +36,9 @@ export function drawPortrait(canvas, id, variation) {
   const style = avatarStyle(id,variation);
   studio ??= createStudio();
   studio(canvas,style);
-  return `${style.hairStyle} hair, ${style.outfit}`;
+  return `${style.hairStyle} hair, ${style.outfit}, ${style.bottom}, ${style.shoes}`;
 }
 
-export function anotherLook(id, current) {
-  const previous = JSON.stringify(avatarStyle(id,current));
-  let next;
-  do { next = 1 + Math.floor(Math.random() * 2147483647); }
-  while (JSON.stringify(avatarStyle(id,next)) === previous);
-  return next;
+export function anotherLook(id, filter, history) {
+  return drawVariation(id,filter,history.map(v=>silhouette(avatarStyle(id,v))),avatarStyle);
 }

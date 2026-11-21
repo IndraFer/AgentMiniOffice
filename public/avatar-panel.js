@@ -7,7 +7,12 @@ export function avatarPanel(h, agent, canEdit, persist) {
   const button = (text, action, primary=false) => h('button',{
     type:'button',class:`btn ${primary ? '' : 'btn-quiet'} btn-sm`,onclick:action,disabled:true,
   },text);
-  const shuffle = button('Randomize',()=>show(painter.anotherLook(agent.id,draft)));
+  const filter = h('select',{'aria-label':'Randomize style'},...Object.entries({random:'Random',masculine:'Men',feminine:'Women'}).map(([value,label])=>h('option',{value},label)));
+  const history = [saved];
+  const shuffle = button('Randomize',()=>{
+    const next = painter.anotherLook(agent.id,filter.value,[draft,...history]);
+    history.unshift(next); history.length=Math.min(history.length,5); show(next);
+  });
   const reset = button('Use default',()=>show(null));
   const discard = button('Discard',()=>show(saved));
   const save = button('Save',async()=>{
@@ -22,6 +27,7 @@ export function avatarPanel(h, agent, canEdit, persist) {
   },true);
   function controls() {
     const locked = busy || !painter;
+    filter.disabled = locked;
     shuffle.disabled = locked;
     reset.disabled = locked || draft === null;
     discard.disabled = save.disabled = locked || draft === saved;
@@ -45,6 +51,7 @@ export function avatarPanel(h, agent, canEdit, persist) {
   const panel = h('section',{class:'avatar-panel','aria-label':'Avatar appearance'},
     h('div',{class:'avatar-portrait'},canvas,placeholder),h('div',{class:'avatar-options'},
       h('h4',{},'Avatar appearance'),status,
+      canEdit ? h('label',{class:'small'},'Randomize style ',filter) : null,
       canEdit ? h('div',{class:'avatar-actions'},shuffle,reset,discard,save) : null));
   import('./avatar-portrait.js').then(module=>{
     if (!panel.isConnected) return;

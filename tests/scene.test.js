@@ -486,6 +486,14 @@ describe("local mood and identity", () => {
       new Set(["feminine", "masculine", "androgynous"]),
     );
     expect(new Set(population.map((style) => style.hairStyle)).size).toBeGreaterThanOrEqual(6);
-    expect(new Set(population.map((style) => style.outfit)).size).toBe(4);
+    expect(new Set(population.map((style) => style.outfit)).size).toBeGreaterThanOrEqual(9);
+    const looks=Array.from({length:4000},(_,n)=>avatarStyle('catalogue',n+1));
+    for(const group of ['masculine','feminine','androgynous']) {
+      const pool=looks.filter(s=>s.presentation===group);
+      for(const hair of ['crop','shoulder','ponytail']) expect(pool.some(s=>s.hairStyle===hair)).toBe(true);
+      expect(pool.some(s=>s.earwear==='earrings')).toBe(true);
+      expect(pool.some(s=>s.bottom==='skirt')).toBe(group==='feminine');
+      expect(pool.some(s=>s.facialHair!=='none')).toBe(group==='masculine');
+    }
   });
 });
