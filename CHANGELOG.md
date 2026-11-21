@@ -5,6 +5,12 @@ project and its Hermes connector follow the [versioning policy](CONTRIBUTING.md#
 
 ## [Unreleased]
 
+## [0.3.6] - 2026-11-21
+
+### Changed
+
+- In the iframe, Forecast now takes 24.8% of the width and current Weather takes 40.4%, ten percentage points above each card's reference width in the full office. The full office layout is unchanged.
+
 ## [0.3.5] - 2026-11-21
 
 ### Changed

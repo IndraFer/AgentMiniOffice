@@ -2505,7 +2505,17 @@ select.input {
   --fs-xs: calc(var(--s3) * .96);
   --r-md: calc(var(--s3) * .8333);
 }
-.office-embed .scene-forecast { order: -1; }
+/* Each card gets ten percentage points above its own full-office reference. */
+.office-embed .scene-forecast {
+  order: -1;
+  inline-size: 24.8vw;
+  font-size: calc(var(--fs-xs) * 1.68);
+}
+.office-embed .scene-weather {
+  /* The full time + Rain / Windy label occupied 30.4% of the reference canvas. */
+  inline-size: 40.4vw;
+  font-size: min(1.47vw, 1rem);
+}
 .office-embed .scene-hud { inset: var(--embed-inset) var(--embed-inset) auto; justify-content: end; }
 .office-embed .scene-hud button {
   position: relative;
